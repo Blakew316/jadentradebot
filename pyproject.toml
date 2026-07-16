@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jadentradebot"
+version = "1.0.0"
+description = "DTR vs ATR trading & stock identifier — Python port of the thinkorswim Custom ATR Plot by 7of9 (usethinkscript.com)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "yfinance>=0.2.40",
+    "flask>=3.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+jadentradebot = "jadentradebot.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["jadentradebot*"]
+
+[tool.setuptools.package-data]
+"jadentradebot.web" = ["templates/*.html"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
