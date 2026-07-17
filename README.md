@@ -108,6 +108,43 @@ The `thinkscript/` folder contains ready-to-paste thinkorswim studies:
   exhaustion alert
 - `DTR_vs_ATR_scan.ts` — Stock Hacker scan / watchlist-column version
 
+## Deploying with GitHub Actions + GitHub Pages
+
+GitHub Pages only serves static files, so the Flask server can't run there.
+Instead, the included workflows publish an **auto-refreshing static snapshot**
+of the dashboard — GitHub's Actions runners have internet access, so they can
+pull live Yahoo/Stooq data even though your machine may not:
+
+- `.github/workflows/ci.yml` — runs the test suite and an offline site build
+  on every push and pull request.
+- `.github/workflows/pages.yml` — scans the watchlist with **live data**,
+  renders the dashboard with the results embedded (`sitegen`), and deploys it
+  to GitHub Pages on every push, every 30 minutes during US market hours, and
+  on demand.
+
+**One-time setup** (after these files are on your default branch):
+
+1. Repo **Settings → Pages → Build and deployment → Source: “GitHub Actions”**.
+2. Trigger the first deploy: **Actions → “Deploy dashboard to GitHub Pages” →
+   Run workflow** (optionally passing custom tickers), or just push a commit.
+3. Your dashboard appears at `https://<user>.github.io/<repo>/`, with the raw
+   scan JSON at `.../data/scan.json`.
+
+To change the deployed watchlist permanently, edit `DEFAULT_WATCHLIST` in
+`jadentradebot/scanner.py` (or pass `-t` flags in the workflow's sitegen step).
+The snapshot page keeps the chips, sortable table, and per-symbol charts —
+only the live re-scan controls are removed. You can build the same snapshot
+locally with:
+
+```bash
+python -m jadentradebot sitegen --out site            # live data
+python -m jadentradebot sitegen --out site --source offline   # demo data
+```
+
+To host the *interactive* Flask dashboard instead (live re-scans from the
+browser), use any Python host — e.g. Render, Fly.io, Railway — with
+`pip install .` and `python -m jadentradebot web --host 0.0.0.0 --port $PORT`.
+
 ## Data sources
 
 | Source | Use |

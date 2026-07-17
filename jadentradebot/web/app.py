@@ -55,6 +55,30 @@ def _row_payload(row: ScanRow) -> dict:
     }
 
 
+def chart_payload(row: ScanRow) -> dict:
+    """Row payload plus the last CHART_BARS daily bars of the indicator
+    series, for the candlestick chart. Requires a row scanned with
+    ``keep_series=True``."""
+    series: pd.DataFrame = row.result.series.tail(CHART_BARS)
+    bars = [
+        {
+            "date": pd.Timestamp(idx).date().isoformat(),
+            "open": _clean(rec["open"]) if "open" in series.columns else None,
+            "high": _clean(rec["high"]),
+            "low": _clean(rec["low"]),
+            "close": _clean(rec["close"]),
+            "atr": _clean(rec["atr"]),
+            "dtr": _clean(rec["dtr"]),
+            "dtr_pct": _clean(rec["dtr_pct"]),
+            "status": rec["status"],
+        }
+        for idx, rec in series.iterrows()
+    ]
+    payload = _row_payload(row)
+    payload["bars"] = bars
+    return payload
+
+
 def create_app(
     watchlist: list[str] | None = None,
     source: str = "auto",
@@ -122,25 +146,7 @@ def create_app(
         )
         if not row.ok:
             return jsonify({"symbol": row.symbol, "ok": False, "error": row.error}), 404
-
-        series: pd.DataFrame = row.result.series.tail(CHART_BARS)
-        bars = [
-            {
-                "date": pd.Timestamp(idx).date().isoformat(),
-                "open": _clean(rec["open"]) if "open" in series.columns else None,
-                "high": _clean(rec["high"]),
-                "low": _clean(rec["low"]),
-                "close": _clean(rec["close"]),
-                "atr": _clean(rec["atr"]),
-                "dtr": _clean(rec["dtr"]),
-                "dtr_pct": _clean(rec["dtr_pct"]),
-                "status": rec["status"],
-            }
-            for idx, rec in series.iterrows()
-        ]
-        payload = _row_payload(row)
-        payload["bars"] = bars
-        return jsonify(payload)
+        return jsonify(chart_payload(row))
 
     return app
 

@@ -133,6 +133,16 @@ def build_parser() -> argparse.ArgumentParser:
     p_label.add_argument("--no-color", action="store_true", help="disable ANSI colors")
     _add_common_args(p_label)
 
+    p_site = sub.add_parser(
+        "sitegen", help="build a static dashboard snapshot (for GitHub Pages)"
+    )
+    p_site.add_argument("--out", default="site", help="output directory (default: site)")
+    p_site.add_argument(
+        "-t", "--ticker", action="append", dest="tickers", metavar="SYM",
+        help="ticker to include (repeatable); defaults to the built-in watchlist",
+    )
+    _add_common_args(p_site)
+
     p_web = sub.add_parser("web", help="launch the web dashboard")
     p_web.add_argument("--host", default="127.0.0.1")
     p_web.add_argument("--port", type=int, default=8000)
@@ -178,6 +188,23 @@ def main(argv: list[str] | None = None) -> int:
         print(_paint(row.result.label, row.result.status.value, color))
         print(row.result.status.meaning)
         return 0
+
+    if args.command == "sitegen":
+        from jadentradebot.sitegen import build_site
+
+        data = build_site(
+            args.out,
+            symbols=args.tickers,
+            atr_length=args.atr_length,
+            lookback_days=args.lookback_days,
+            source=args.source,
+        )
+        ok = sum(1 for r in data["rows"] if r.get("ok"))
+        print(
+            f"wrote {args.out}/index.html — {ok}/{len(data['rows'])} symbols "
+            f"scanned ({data['generated_at']})"
+        )
+        return 0 if ok else 1
 
     if args.command == "web":
         from jadentradebot.web.app import create_app

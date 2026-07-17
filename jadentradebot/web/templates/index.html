@@ -127,6 +127,13 @@
 </header>
 
 <main>
+  {% if static_data %}
+  <div class="controls" style="justify-content:space-between">
+    <span>📌 Static snapshot · generated <b>{{ static_data.generated_at }}</b> ·
+      source <b>{{ static_data.params.source }}</b> · ATR length <b>{{ static_data.params.atr_length }}</b></span>
+    <span style="color:var(--muted);font-size:12px">Refreshed automatically by GitHub Actions · raw data: <a href="data/scan.json" style="color:var(--accent)">scan.json</a></span>
+  </div>
+  {% else %}
   <div class="controls">
     <label>Watchlist</label>
     <input id="tickers" type="text" value="{{ watchlist }}" spellcheck="false"
@@ -142,6 +149,7 @@
     </select>
     <button id="scanBtn">Scan</button>
   </div>
+  {% endif %}
 
   <div class="legend">
     <span><i class="dot" style="background:var(--green-bright)"></i><b>GREEN</b>&nbsp;≤ 70% of ATR used — room to move</span>
@@ -187,8 +195,10 @@
   </footer>
 </main>
 
+{% if static_data %}<script>window.STATIC_DATA = {{ static_data | tojson }};</script>{% endif %}
 <script>
 "use strict";
+const STATIC = window.STATIC_DATA || null;
 const COLORS = { GREEN: "#3ddc84", ORANGE: "#f39c12", RED: "#e74c3c" };
 let lastRows = [];
 let sortKey = null, sortDir = 1;
@@ -208,6 +218,16 @@ function params() {
 }
 
 async function runScan() {
+  if (STATIC) {
+    lastRows = STATIC.rows;
+    render();
+    const ok = lastRows.filter(r => r.ok);
+    $("status").textContent =
+      `Snapshot of ${lastRows.length} symbol${lastRows.length === 1 ? "" : "s"}` +
+      (ok.length ? ` · data date ${ok[0].date}` : "") +
+      ` · generated ${STATIC.generated_at}`;
+    return;
+  }
   const btn = $("scanBtn");
   btn.disabled = true;
   $("status").textContent = "Scanning…";
@@ -295,13 +315,23 @@ function render() {
   $("results").style.display = lastRows.length ? "" : "none";
 }
 
+function applyChart(data) {
+  $("chartStudyLabel").textContent = data.label;
+  $("chartStudyLabel").style.background = COLORS[data.status];
+  $("chartStudyLabel").style.color = data.status === "RED" ? "#fff" : "#0d1117";
+  $("chartMeta").innerHTML =
+    `${esc(data.meaning)}. Range left today: <b>$${fmt(data.range_left)}</b> (${fmt(data.range_left_pct,0)}% of ATR) · ` +
+    `ATR upside target from day low: <b>$${fmt(data.atr_buy_target)}</b> · ` +
+    `ATR downside target from day high: <b>$${fmt(data.atr_sell_target)}</b>`;
+  drawChart(data.bars);
+  $("chartPanel").scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
 let chartReq = 0;
 async function showChart(symbol) {
   selectedSymbol = symbol;
   const req = ++chartReq;   // drop stale responses if the user clicks fast
   render();
-  const p = params();
-  const qs = new URLSearchParams({ atr_length: p.atr_length, source: p.source });
   const panel = $("chartPanel");
   panel.style.display = "block";
   $("chartTitle").textContent = symbol + " — daily";
@@ -309,20 +339,20 @@ async function showChart(symbol) {
   $("chartStudyLabel").style.background = "#3a4257";
   $("chart").innerHTML = "";
   $("chartMeta").textContent = "";
+  if (STATIC) {
+    const data = STATIC.charts && STATIC.charts[symbol];
+    if (data) applyChart(data);
+    else $("chartStudyLabel").textContent = "chart unavailable in this snapshot";
+    return;
+  }
+  const p = params();
+  const qs = new URLSearchParams({ atr_length: p.atr_length, source: p.source });
   try {
     const resp = await fetch(`/api/chart/${encodeURIComponent(symbol)}?` + qs.toString());
     const data = await resp.json();
     if (req !== chartReq) return;
     if (!resp.ok || !data.ok) throw new Error(data.error || ("HTTP " + resp.status));
-    $("chartStudyLabel").textContent = data.label;
-    $("chartStudyLabel").style.background = COLORS[data.status];
-    $("chartStudyLabel").style.color = data.status === "RED" ? "#fff" : "#0d1117";
-    $("chartMeta").innerHTML =
-      `${data.meaning}. Range left today: <b>$${fmt(data.range_left)}</b> (${fmt(data.range_left_pct,0)}% of ATR) · ` +
-      `ATR upside target from day low: <b>$${fmt(data.atr_buy_target)}</b> · ` +
-      `ATR downside target from day high: <b>$${fmt(data.atr_sell_target)}</b>`;
-    drawChart(data.bars);
-    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    applyChart(data);
   } catch (err) {
     if (req === chartReq) $("chartStudyLabel").textContent = "chart unavailable: " + err.message;
   }
@@ -418,8 +448,10 @@ document.querySelectorAll("thead th").forEach((th) => {
     render();
   };
 });
-$("scanBtn").onclick = runScan;
-$("tickers").addEventListener("keydown", (e) => { if (e.key === "Enter" && !$("scanBtn").disabled) runScan(); });
+if (!STATIC) {
+  $("scanBtn").onclick = runScan;
+  $("tickers").addEventListener("keydown", (e) => { if (e.key === "Enter" && !$("scanBtn").disabled) runScan(); });
+}
 runScan();
 </script>
 </body>
