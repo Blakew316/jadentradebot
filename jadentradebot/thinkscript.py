@@ -84,5 +84,9 @@ def ts_round(value: float, digits: int = 0) -> float:
     value = float(value)  # accept numpy scalars
     if math.isnan(value) or math.isinf(value):
         return value if math.isinf(value) else float("nan")
+    if abs(value) >= 1e15:
+        # Beyond float's integer-exact range: rounding is the identity, and
+        # Decimal.quantize would overflow its default 28-digit context.
+        return value
     quant = Decimal(1).scaleb(-digits)
     return float(Decimal(repr(value)).quantize(quant, rounding=ROUND_HALF_UP))

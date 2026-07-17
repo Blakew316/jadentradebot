@@ -114,3 +114,8 @@ class TestTsRound:
 
     def test_nan_passthrough(self):
         assert math.isnan(ts_round(float("nan")))
+
+    def test_huge_values_are_identity_not_error(self):
+        assert ts_round(1e300) == 1e300
+        assert ts_round(-1e300, 2) == -1e300
+        assert ts_round(float("inf")) == float("inf")

@@ -80,6 +80,8 @@ def _standardize(df: pd.DataFrame, symbol: str) -> pd.DataFrame:
         out.index = out.index.tz_localize(None)
     out.index.name = "date"
     out = out.sort_index()
+    # Providers occasionally duplicate the latest bar; keep the freshest copy.
+    out = out[~out.index.duplicated(keep="last")]
     out = out.dropna(subset=["open", "high", "low", "close"])
     if out.empty:
         raise LookupError(f"{symbol}: no usable rows after cleaning")
@@ -101,14 +103,24 @@ def fetch_yfinance(symbol: str, lookback_days: int = DEFAULT_LOOKBACK_DAYS) -> p
     return _standardize(df, symbol)
 
 
+_STOOQ_MARKET_SUFFIX = re.compile(r"\.(us|uk|de|jp|hk|hu|pl|fr|it)$")
+
+
+def _stooq_symbol(symbol: str) -> str:
+    """Map a ticker to stooq's naming: AAPL -> aapl.us, BRK.B -> brk-b.us;
+    an explicit market suffix like AAPL.US is honoured as-is."""
+    sym = symbol.lower()
+    if _STOOQ_MARKET_SUFFIX.search(sym):
+        return sym
+    return sym.replace(".", "-") + ".us"
+
+
 def fetch_stooq(symbol: str, lookback_days: int = DEFAULT_LOOKBACK_DAYS) -> pd.DataFrame:
-    """stooq.com free daily CSV. US symbols are suffixed ``.us``
-    (AAPL -> aapl.us); symbols already carrying a dot are passed through."""
+    """stooq.com free daily CSV endpoint."""
+    import urllib.parse
     import urllib.request
 
-    sym = symbol.lower()
-    if "." not in sym:
-        sym = f"{sym}.us"
+    sym = urllib.parse.quote(_stooq_symbol(symbol))
     url = f"https://stooq.com/q/d/l/?s={sym}&i=d"
     with urllib.request.urlopen(url, timeout=30) as resp:
         text = resp.read().decode("utf-8", errors="replace")
@@ -117,7 +129,10 @@ def fetch_stooq(symbol: str, lookback_days: int = DEFAULT_LOOKBACK_DAYS) -> pd.D
     df = pd.read_csv(io.StringIO(text), parse_dates=["Date"], index_col="Date")
     df = _standardize(df, symbol)
     cutoff = pd.Timestamp(date.today() - timedelta(days=lookback_days))
-    return df.loc[df.index >= cutoff]
+    df = df.loc[df.index >= cutoff]
+    if len(df) < 2:
+        raise LookupError(f"{symbol}: stooq has no recent bars")
+    return df
 
 
 def sample_daily(
@@ -143,7 +158,7 @@ def sample_daily(
     rng = np.random.RandomState(seed)
 
     end = end or date.today()
-    days = pd.bdate_range(end=pd.Timestamp(end), periods=int(lookback_days * 5 / 7))
+    days = pd.bdate_range(end=pd.Timestamp(end), periods=max(2, int(lookback_days * 5 / 7)))
 
     n = len(days)
     rets = rng.normal(loc=0.0003, scale=daily_vol, size=n)

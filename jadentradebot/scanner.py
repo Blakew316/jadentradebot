@@ -76,7 +76,7 @@ def scan(
         return []
 
     rows: list[ScanRow] = []
-    with ThreadPoolExecutor(max_workers=min(max_workers, len(watch))) as pool:
+    with ThreadPoolExecutor(max_workers=max(1, min(max_workers, len(watch)))) as pool:
         futures = {
             pool.submit(
                 scan_symbol, sym, atr_length, lookback_days, source, keep_series

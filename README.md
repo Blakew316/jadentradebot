@@ -58,9 +58,10 @@ python -m jadentradebot scan --source offline
 ```
 
 The scan table is sorted the way traders use the label: GREEN first (most
-range left), then ORANGE, then RED, with failed symbols last. It also shows
-the enhancements: **Range Left** in dollars and percent, and **ATR targets**
-projected from today's extremes (`low + ATR`, `high − ATR`).
+range left), then ORANGE, then RED, with failed symbols last, and adds
+**Range Left** in dollars and percent. The `--json` output and the web
+dashboard also include **ATR targets** projected from today's extremes
+(`low + ATR`, `high − ATR`).
 
 ## Web dashboard
 

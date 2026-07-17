@@ -295,8 +295,10 @@ function render() {
   $("results").style.display = lastRows.length ? "" : "none";
 }
 
+let chartReq = 0;
 async function showChart(symbol) {
   selectedSymbol = symbol;
+  const req = ++chartReq;   // drop stale responses if the user clicks fast
   render();
   const p = params();
   const qs = new URLSearchParams({ atr_length: p.atr_length, source: p.source });
@@ -310,6 +312,7 @@ async function showChart(symbol) {
   try {
     const resp = await fetch(`/api/chart/${encodeURIComponent(symbol)}?` + qs.toString());
     const data = await resp.json();
+    if (req !== chartReq) return;
     if (!resp.ok || !data.ok) throw new Error(data.error || ("HTTP " + resp.status));
     $("chartStudyLabel").textContent = data.label;
     $("chartStudyLabel").style.background = COLORS[data.status];
@@ -321,7 +324,7 @@ async function showChart(symbol) {
     drawChart(data.bars);
     panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
   } catch (err) {
-    $("chartStudyLabel").textContent = "chart unavailable: " + err.message;
+    if (req === chartReq) $("chartStudyLabel").textContent = "chart unavailable: " + err.message;
   }
 }
 
@@ -416,7 +419,7 @@ document.querySelectorAll("thead th").forEach((th) => {
   };
 });
 $("scanBtn").onclick = runScan;
-$("tickers").addEventListener("keydown", (e) => { if (e.key === "Enter") runScan(); });
+$("tickers").addEventListener("keydown", (e) => { if (e.key === "Enter" && !$("scanBtn").disabled) runScan(); });
 runScan();
 </script>
 </body>

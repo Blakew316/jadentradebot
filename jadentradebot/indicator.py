@@ -34,6 +34,7 @@ port reproduces that exactly.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
@@ -71,6 +72,15 @@ class Status(str, Enum):
         }[self]
 
 
+def _fmt_price(value: float) -> str:
+    """Render Round(value, 2) for the label: 12345.68 -> '12345.68',
+    4.0 -> '4', 8.10 -> '8.1'."""
+    r = ts_round(value, 2)
+    if not math.isfinite(r):
+        return str(r)
+    return f"{r:.2f}".rstrip("0").rstrip(".")
+
+
 def classify(dtr_pct_rounded: float) -> Status:
     """Colour logic from the original AddLabel, applied to the rounded pct."""
     if dtr_pct_rounded <= GREEN_MAX:
@@ -102,10 +112,12 @@ class DtrVsAtrResult:
 
     @property
     def label(self) -> str:
-        """The exact AddLabel text from the ThinkScript."""
+        """The AddLabel text from the ThinkScript (Round to 2dp, trailing
+        zeros trimmed). Full precision at any magnitude — no 6-significant-
+        digit truncation or scientific notation on high-priced symbols."""
         return (
-            f"DTR {ts_round(self.dtr, 2):g} vs ATR {ts_round(self.atr, 2):g}"
-            f"  {self.dtr_pct:g}%"
+            f"DTR {_fmt_price(self.dtr)} vs ATR {_fmt_price(self.atr)}"
+            f"  {self.dtr_pct:.0f}%"
         )
 
     @property
@@ -148,7 +160,11 @@ def compute_series(
     if "open" in cols:  # carried through for charting; not used by the study
         frame["open"] = daily[cols["open"]].astype(float)
     out = pd.DataFrame(frame, index=daily.index)
-    out["status"] = out["dtr_pct"].map(lambda p: classify(p).value)
+    # A 0/0 bar (no range, no ATR yet) has no meaningful DTR% — mark it NA
+    # instead of letting NaN comparisons fall through to ORANGE.
+    out["status"] = out["dtr_pct"].map(
+        lambda p: classify(p).value if math.isfinite(p) else "NA"
+    )
     return out
 
 

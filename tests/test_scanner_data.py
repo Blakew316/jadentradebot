@@ -4,7 +4,13 @@ import pandas as pd
 import pytest
 
 import jadentradebot.scanner as scanner_mod
-from jadentradebot.data import _standardize, fetch_daily, sample_daily, validate_symbol
+from jadentradebot.data import (
+    _standardize,
+    _stooq_symbol,
+    fetch_daily,
+    sample_daily,
+    validate_symbol,
+)
 from jadentradebot.scanner import DEFAULT_WATCHLIST, scan, scan_symbol
 
 
@@ -47,6 +53,9 @@ class TestSampleData:
         df = sample_daily("AAPL")
         assert df["close"].iloc[-1] == pytest.approx(210.0)
 
+    def test_tiny_lookback_still_yields_two_bars(self):
+        assert len(sample_daily("AAPL", lookback_days=1)) >= 2
+
 
 class TestStandardize:
     def test_multiindex_columns_flattened(self):
@@ -63,6 +72,23 @@ class TestStandardize:
     def test_empty_raises(self):
         with pytest.raises(LookupError):
             _standardize(pd.DataFrame(), "X")
+
+    def test_duplicate_dates_keep_last(self):
+        idx = pd.to_datetime(["2026-01-05", "2026-01-06", "2026-01-06"])
+        df = pd.DataFrame(
+            {"open": [1, 2, 3], "high": [2, 3, 4], "low": [0.5, 1, 2],
+             "close": [1.5, 2.5, 3.5]},
+            index=idx,
+        )
+        out = _standardize(df, "DUP")
+        assert len(out) == 2
+        assert out["close"].iloc[-1] == 3.5
+
+    def test_stooq_symbol_mapping(self):
+        assert _stooq_symbol("AAPL") == "aapl.us"
+        assert _stooq_symbol("BRK.B") == "brk-b.us"
+        assert _stooq_symbol("AAPL.US") == "aapl.us"
+        assert _stooq_symbol("BF-B") == "bf-b.us"
 
     def test_unknown_source_rejected(self):
         with pytest.raises(ValueError, match="unknown source"):
@@ -105,6 +131,16 @@ class TestScanner:
         assert rows[-1].symbol == "BAD" and not rows[-1].ok
         assert "no data" in rows[-1].error
         assert rows[0].symbol == "AAPL" and rows[0].ok
+
+    def test_max_workers_clamped(self):
+        rows = scan(["AAPL", "TSLA"], source="offline", max_workers=0)
+        assert all(r.ok for r in rows)
+
+    def test_atr_length_changes_result(self):
+        short = scan_symbol("TSLA", atr_length=2, source="offline")
+        long = scan_symbol("TSLA", atr_length=50, source="offline")
+        assert short.ok and long.ok
+        assert short.result.atr != pytest.approx(long.result.atr)
 
     def test_scan_symbol_keep_series(self):
         row = scan_symbol("NVDA", source="offline", keep_series=True)

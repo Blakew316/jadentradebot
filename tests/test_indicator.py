@@ -112,6 +112,25 @@ class TestDtrVsAtr:
         res = dtr_vs_atr(daily, symbol="FLAT")
         assert res.label == "DTR 4 vs ATR 4  100%"
 
+    def test_label_keeps_full_precision_on_high_priced_symbols(self):
+        # BRK.A-scale prices: %g-style formatting would truncate 12345.68
+        # to 12345.7 (6 significant digits) or emit scientific notation.
+        n = 50
+        daily = make_daily([712345.68] * n, [700000.0] * n, [706000.0] * n)
+        res = dtr_vs_atr(daily, symbol="BRK.A")
+        assert res.label == "DTR 12345.68 vs ATR 12345.68  100%"
+        assert "e+" not in res.label
+
+    def test_degenerate_series_bars_marked_na_not_orange(self):
+        # First bars have zero range (0/0 -> NaN pct); they must not be
+        # mislabelled ORANGE in the per-day series.
+        highs = [100.0, 100.0, 104.0, 104.0]
+        lows = [100.0, 100.0, 100.0, 100.0]
+        closes = [100.0, 100.0, 102.0, 102.0]
+        series = compute_series(make_daily(highs, lows, closes))
+        assert series["status"].iloc[0] == "NA"
+        assert series["status"].iloc[-1] in ("GREEN", "ORANGE", "RED")
+
     def test_atr_targets(self):
         n = 50
         daily = make_daily([104] * n, [100] * n, [102] * n)

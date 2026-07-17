@@ -46,6 +46,15 @@ class TestCli:
         assert main([]) == 2
         assert "scan" in capsys.readouterr().out
 
+    def test_scan_all_failed_exit_code(self, capsys, monkeypatch):
+        import jadentradebot.scanner as scanner_mod
+
+        def boom(symbol, **kwargs):
+            raise LookupError("nope")
+
+        monkeypatch.setattr(scanner_mod, "fetch_daily", boom)
+        assert main(["scan", "--source", "offline", "-t", "AAPL"]) == 1
+
 
 @pytest.fixture()
 def client():
