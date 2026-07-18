@@ -131,6 +131,10 @@
   #themeBtn svg { width: 17px; height: 17px; }
 
   main { width: 100%; max-width: 880px; margin: 0 auto; padding: 40px 24px 56px; flex: 1; }
+  /* On wide screens, sit the calculator toward the right so the video shows */
+  @media (min-width: 1100px) {
+    main { margin: 0 7vw 0 auto; }
+  }
 
   .card {
     background: color-mix(in srgb, var(--card) 90%, transparent);
