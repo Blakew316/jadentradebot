@@ -198,6 +198,44 @@
   svg.plot text { fill: var(--faint); font-size: 10.5px;
                   font-family: "SF Mono", "Menlo", "Consolas", monospace; }
 
+  /* Position size calculator */
+  #calcPanel { margin-top: 18px; padding: 18px 20px 20px; }
+  #calcPanel h2 { margin: 0 0 2px; font-size: 15.5px; font-weight: 700; letter-spacing: -.2px; }
+  .calcSub { color: var(--muted); font-size: 12.5px; margin: 0 0 14px; }
+  .calcGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  @media (max-width: 760px) { .calcGrid { grid-template-columns: 1fr; } }
+  .calcInputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; align-content: start; }
+  .calcInputs label {
+    display: flex; flex-direction: column; gap: 5px;
+    color: var(--faint); font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .6px;
+  }
+  .calcInputs input, .calcInputs select {
+    background: var(--card); color: var(--text);
+    border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px;
+    font-size: 14px; font-variant-numeric: tabular-nums; width: 100%;
+  }
+  .calcInputs input:focus, .calcInputs select:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(26,86,219,.12);
+  }
+  .calcResults { display: flex; flex-direction: column; gap: 0; align-self: start;
+    background: #fbfcfe; border: 1px solid var(--line-soft); border-radius: 10px; padding: 6px 16px; }
+  .calcRow {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    padding: 9px 0; border-bottom: 1px solid var(--line-soft);
+    color: var(--muted); font-size: 13px;
+  }
+  .calcRow:last-child { border-bottom: 0; }
+  .calcRow b { color: var(--text); font-variant-numeric: tabular-nums; font-size: 13.5px; }
+  .calcRow.hero { padding: 12px 0; }
+  .calcRow.hero b { color: var(--brand); font-size: 24px; font-weight: 700; }
+  .calcRow .side { font-size: 11px; font-weight: 700; letter-spacing: .5px;
+    border-radius: 5px; padding: 2px 7px; }
+  .calcRow .side.long { background: #f0faf3; color: var(--green); }
+  .calcRow .side.short { background: #fdf1f0; color: var(--red); }
+  .calcHint { color: var(--faint); font-size: 12px; padding: 10px 0; }
+
   footer {
     border-top: 1px solid var(--line);
     color: var(--faint); font-size: 11.5px; margin-top: 36px;
@@ -333,6 +371,41 @@
     <div id="chartStudyLabel" class="chartLabel"></div>
     <div id="chartMeta"></div>
     <div id="chart"></div>
+  </div>
+
+  <div id="calcPanel" class="card">
+    <h2>Position Size Calculator</h2>
+    <p class="calcSub">Risk-based sizing — how many shares to trade so a stop-out
+      costs only the risk you choose. Pick a scanned symbol to auto-fill the
+      entry and an ATR-based stop, or type your own prices.</p>
+    <div class="calcGrid">
+      <div class="calcInputs">
+        <label>Account size ($)
+          <input id="cAccount" type="number" value="10000" min="0" step="100"></label>
+        <label>Risk per trade (%)
+          <input id="cRiskPct" type="number" value="1" min="0.05" max="100" step="0.05"></label>
+        <label>Symbol (prefill from scan)
+          <select id="cSymbol"><option value="">— manual entry —</option></select></label>
+        <label>ATR stop multiple
+          <input id="cAtrMult" type="number" value="1.5" min="0.1" step="0.1"></label>
+        <label>Entry price ($)
+          <input id="cEntry" type="number" min="0" step="0.01" placeholder="e.g. 100.00"></label>
+        <label>Stop-loss price ($)
+          <input id="cStop" type="number" min="0" step="0.01" placeholder="e.g. 95.00"></label>
+        <label>Profit target (R multiple)
+          <input id="cRMult" type="number" value="2" min="0.5" step="0.5"></label>
+      </div>
+      <div class="calcResults" id="calcResults">
+        <div class="calcRow"><span>Direction</span><b id="rSide">—</b></div>
+        <div class="calcRow"><span>Max risk amount</span><b id="rRisk">—</b></div>
+        <div class="calcRow"><span>Risk per share (entry − stop)</span><b id="rPerShare">—</b></div>
+        <div class="calcRow hero"><span>Shares to trade</span><b id="rShares">—</b></div>
+        <div class="calcRow"><span>Position value</span><b id="rValue">—</b></div>
+        <div class="calcRow"><span>Target price</span><b id="rTarget">—</b></div>
+        <div class="calcRow"><span>Potential profit at target</span><b id="rProfit">—</b></div>
+        <div class="calcHint" id="calcHint">Enter an entry and stop price (or pick a symbol) to size a trade.</div>
+      </div>
+    </div>
   </div>
 
   <footer>
@@ -484,6 +557,7 @@ function render() {
     tbody.appendChild(tr);
   }
   $("results").style.display = lastRows.length ? "" : "none";
+  calcSymbolOptions();
   const q = filterText.trim();
   if (q && lastRows.length) {
     $("status").textContent = visible.length
@@ -667,6 +741,84 @@ function drawChart(bars) {
 
   $("chart").innerHTML = "";
   $("chart").appendChild(svg);
+}
+
+// ---- position size calculator ---------------------------------------------
+
+const money = (v) => "$" + Number(v).toLocaleString("en-US",
+  { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function calcSymbolOptions() {
+  const sel = $("cSymbol");
+  const keep = sel.value;
+  while (sel.options.length > 1) sel.remove(1);
+  for (const r of lastRows) {
+    if (!r.ok) continue;
+    const opt = document.createElement("option");
+    opt.value = r.symbol;
+    opt.textContent = `${r.symbol} — close ${fmt(r.last_close)}, ATR ${fmt(r.atr)}`;
+    sel.appendChild(opt);
+  }
+  if ([...sel.options].some(o => o.value === keep)) sel.value = keep;
+}
+
+function calcPrefill() {
+  const row = lastRows.find(r => r.ok && r.symbol === $("cSymbol").value);
+  if (!row) return;
+  const mult = parseFloat($("cAtrMult").value) || 1.5;
+  $("cEntry").value = row.last_close.toFixed(2);
+  $("cStop").value = Math.max(row.last_close - mult * row.atr, 0.01).toFixed(2);
+  recalc();
+}
+
+function recalc() {
+  const account = parseFloat($("cAccount").value);
+  const riskPct = parseFloat($("cRiskPct").value);
+  const entry = parseFloat($("cEntry").value);
+  const stop = parseFloat($("cStop").value);
+  const rMult = parseFloat($("cRMult").value) || 2;
+  const hint = $("calcHint");
+  const out = (id, v) => { $(id).textContent = v; };
+
+  const reset = (msg) => {
+    for (const id of ["rSide","rRisk","rPerShare","rShares","rValue","rTarget","rProfit"]) out(id, "—");
+    $("rSide").innerHTML = "—";
+    hint.textContent = msg;
+  };
+
+  if (!(account > 0) || !(riskPct > 0)) return reset("Enter your account size and risk percent.");
+  if (!(entry > 0) || !(stop > 0)) return reset("Enter an entry and stop price (or pick a symbol) to size a trade.");
+  if (entry === stop) return reset("Entry and stop can't be equal — there is no risk per share to size against.");
+
+  const isLong = stop < entry;
+  const perShare = Math.abs(entry - stop);
+  const riskAmt = account * riskPct / 100;
+  const shares = Math.floor(riskAmt / perShare);
+  if (shares < 1) {
+    return reset(`Risk budget ${money(riskAmt)} is below the ${money(perShare)} risk of a single share — widen the risk % or tighten the stop.`);
+  }
+  const value = shares * entry;
+  const target = isLong ? entry + rMult * perShare : entry - rMult * perShare;
+  const profit = shares * rMult * perShare;
+
+  $("rSide").innerHTML = isLong
+    ? '<span class="side long">LONG</span>'
+    : '<span class="side short">SHORT</span>';
+  out("rRisk", money(riskAmt) + ` (${riskPct}%)`);
+  out("rPerShare", money(perShare));
+  out("rShares", shares.toLocaleString("en-US"));
+  out("rValue", money(value) + ` (${(value / account * 100).toFixed(0)}% of account)`);
+  out("rTarget", money(target) + ` (${rMult}R)`);
+  out("rProfit", money(profit));
+  hint.textContent = isLong
+    ? `Buy ${shares.toLocaleString("en-US")} shares; a stop-out at ${money(stop)} loses ~${money(shares * perShare)}.`
+    : `Short ${shares.toLocaleString("en-US")} shares; a stop-out at ${money(stop)} loses ~${money(shares * perShare)}.`;
+}
+
+$("cSymbol").addEventListener("change", calcPrefill);
+$("cAtrMult").addEventListener("input", () => { if ($("cSymbol").value) calcPrefill(); else recalc(); });
+for (const id of ["cAccount", "cRiskPct", "cEntry", "cStop", "cRMult"]) {
+  $(id).addEventListener("input", recalc);
 }
 
 document.querySelectorAll("thead th").forEach((th) => {

@@ -134,6 +134,24 @@ class TestSearchUi:
         assert 'id="scanBtn"' not in html
 
 
+class TestCalculator:
+    def test_dynamic_page_has_calculator(self):
+        app = create_app(watchlist=["AAPL"], source="offline")
+        html = app.test_client().get("/").get_data(as_text=True)
+        assert "Position Size Calculator" in html
+        for el in ("cAccount", "cRiskPct", "cSymbol", "cAtrMult", "cEntry",
+                   "cStop", "cRMult", "rShares", "rTarget"):
+            assert f'id="{el}"' in html
+
+    def test_static_page_has_calculator(self, tmp_path):
+        from jadentradebot.sitegen import build_site
+
+        build_site(tmp_path / "s", symbols=["AAPL"], source="offline")
+        html = (tmp_path / "s" / "index.html").read_text()
+        assert "Position Size Calculator" in html
+        assert 'id="cSymbol"' in html
+
+
 class TestRenderBlueprint:
     def test_render_yaml_is_valid_and_complete(self):
         import yaml
