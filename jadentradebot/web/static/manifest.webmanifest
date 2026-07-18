@@ -1,7 +1,7 @@
 {
-  "name": "SAR Risk Management Calculator",
-  "short_name": "SAR Calc",
-  "description": "Size share and option positions by the % of your account you risk.",
+  "name": "Jaden's Risk Calculator",
+  "short_name": "JRC",
+  "description": "Size positions by the % of your account you risk.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

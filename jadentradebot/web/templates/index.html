@@ -6,11 +6,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="SAR Calc">
+<meta name="apple-mobile-web-app-title" content="JRC">
 <meta name="theme-color" id="themeColorMeta" content="#f5f5f7">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<title>SAR Risk Management Calculator — JadenTradeBot</title>
+<title>Jaden's Risk Calculator — JadenTradeBot</title>
 <script>
   // Apply the saved (or system) theme before first paint to avoid flashing.
   (function () {
@@ -264,7 +264,7 @@
     <span class="name">Jaden<span>TradeBot</span></span>
   </div>
   <span class="divider"></span>
-  <span class="product">SAR Risk Management Calculator</span>
+  <span class="product">Jaden's Risk Calculator</span>
   <span class="meta">v{{ version }}</span>
   <button id="themeBtn" type="button" aria-label="Toggle dark mode">
     <svg aria-hidden="true"><use id="themeIcon" href="#i-moon"/></svg>
@@ -274,8 +274,8 @@
 <main>
   <div id="calcPanel" class="card">
     <div class="sarTitle">
-      <h1>SAR Risk Management Calculator</h1>
-      <span class="sub">Size share and option positions by the % of your account you risk</span>
+      <h1>Jaden’s Risk Calculator</h1>
+      <span class="sub">Size positions by the % of your account you risk</span>
     </div>
     <div class="sarGrid">
       <div class="sarCol">
@@ -315,14 +315,6 @@
             <button type="button" class="sarStep" data-target="cStop" data-step="1" aria-label="Increment">+</button>
           </div>
         </div>
-        <div class="sar-el">
-          <div class="sarLabel">Option Value</div>
-          <div class="sarField">
-            <input id="cOption" type="number" min="0" step="0.05" value="0.00">
-            <button type="button" class="sarStep" data-target="cOption" data-step="-0.05" aria-label="Decrement">−</button>
-            <button type="button" class="sarStep" data-target="cOption" data-step="0.05" aria-label="Increment">+</button>
-          </div>
-        </div>
       </div>
       <div class="sarCol">
         <div class="sar-formula">
@@ -330,15 +322,10 @@
           <div class="sarResult" id="rShares">—</div>
           <div class="sarSub" id="rSharesSub">Enter an entry and stop price</div>
         </div>
-        <div class="sar-formula">
-          <div class="sarFormulaLabel" id="rOptionsLabel">Options to Buy · Risking 1%</div>
-          <div class="sarResult" id="rOptions">—</div>
-          <div class="sarSub" id="rOptionsSub">Enter an option value</div>
-        </div>
       </div>
     </div>
     <div class="sarInfoBar">
-      <span class="sarNote">Shares = account × risk ÷ (entry − stop) · Options = account × risk ÷ (premium × 100)</span>
+      <span class="sarNote">Shares = account × risk ÷ (entry − stop)</span>
     </div>
   </div>
 </main>
@@ -351,9 +338,8 @@ const $ = (id) => document.getElementById(id);
 const money = (v) => "$" + Number(v).toLocaleString("en-US",
   { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-// ---- SAR Risk Management Calculator ---------------------------------------
+// ---- Jaden's Risk Calculator ----------------------------------------------
 // Shares to Buy, Risking r% = account × r% ÷ (entry − stop)
-// Options to Buy, Risking r% = account × r% ÷ (option premium × 100)
 
 function sarAccount() {
   return parseFloat(String($("cAccount").value).replace(/,/g, "")) || 0;
@@ -364,12 +350,10 @@ function sarRecalc() {
   const riskPct = parseFloat($("cRisk").value);
   const entry = parseFloat($("cEntry").value) || 0;
   const stop = parseFloat($("cStop").value) || 0;
-  const option = parseFloat($("cOption").value) || 0;
   const riskAmt = account * riskPct / 100;
   const pctLabel = riskPct + "%";   // 0.25% / 0.5% / 1% / 2%
 
   $("rSharesLabel").textContent = `Shares to Buy · Risking ${pctLabel}`;
-  $("rOptionsLabel").textContent = `Options to Buy · Risking ${pctLabel}`;
 
   const perShare = entry - stop;
   if (riskAmt > 0 && perShare > 0) {
@@ -383,19 +367,6 @@ function sarRecalc() {
       ? "Enter an entry price above your stop loss"
       : "Enter your account size and risk percent";
   }
-
-  const perContract = option * 100;
-  if (riskAmt > 0 && perContract > 0) {
-    const options = Math.floor(riskAmt / perContract);
-    $("rOptions").textContent = options.toLocaleString("en-US");
-    $("rOptionsSub").textContent =
-      `${money(riskAmt)} at risk · ${money(perContract)} per contract`;
-  } else {
-    $("rOptions").textContent = "—";
-    $("rOptionsSub").textContent = riskAmt > 0
-      ? "Enter an option value"
-      : "Enter your account size and risk percent";
-  }
 }
 
 $("cAccount").addEventListener("input", sarRecalc);
@@ -404,7 +375,7 @@ $("cAccount").addEventListener("blur", () => {
   if (v > 0) $("cAccount").value = v.toLocaleString("en-US");
   sarRecalc();
 });
-for (const id of ["cRisk", "cEntry", "cStop", "cOption"]) {
+for (const id of ["cRisk", "cEntry", "cStop"]) {
   $(id).addEventListener("input", sarRecalc);
   $(id).addEventListener("change", sarRecalc);
 }

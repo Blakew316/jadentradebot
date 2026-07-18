@@ -63,30 +63,28 @@ range left), then ORANGE, then RED, with failed symbols last, and adds
 dashboard also include **ATR targets** projected from today's extremes
 (`low + ATR`, `high − ATR`).
 
-## Web app — SAR Risk Management Calculator
+## Web app — Jaden's Risk Calculator (JRC)
 
 ```bash
 python -m jadentradebot web                 # http://127.0.0.1:8000
 python -m jadentradebot web --source offline --port 8000   # demo data
 ```
 
-The site is a single-purpose **SAR Risk Management Calculator** (modelled on
-the Calconic original): account size, risk dropdown (0.5% / 1% / 2%), entry,
-stop, and option value in — **shares to buy** and **options to buy** at that
-risk out, with the dollar risk and per-share/per-contract cost shown under
-each result. An optional dropdown prefills entry and an ATR-based stop from a
-live scan. Professional **light and dark modes** (toggle in the header,
-follows the system preference, persists), fully **iOS-friendly** (safe-area
-insets, 16px inputs so Safari doesn't zoom, 44px touch targets), and
-completely self-contained — no CDNs.
+The site is a single-purpose **Jaden's Risk Calculator**: account size, risk
+dropdown (0.25% / 0.5% / 1% / 2%), entry, and stop in — **shares to buy** at
+that risk out, with the dollar risk and per-share cost shown under the
+result. Professional **light and dark modes** (toggle in the header, follows
+the system preference, persists), fully **iOS-friendly** (safe-area insets,
+16px inputs so Safari doesn't zoom, 44px touch targets), and completely
+self-contained — no CDNs.
 
 The scanner itself remains available through the CLI and the JSON API.
 
-**Install it as an app (PWA).** The site ships a web-app manifest, home-screen
-icons, and a service worker, so it installs like a native app and **works
-fully offline**. On iPhone/iPad: open the site in Safari → Share →
-**Add to Home Screen** — it launches full-screen (standalone, no browser
-chrome) with the JadenTradeBot icon. On Android/desktop Chrome, use the
+**Install it as an app (PWA).** The site ships a web-app manifest, **JRC**
+monogram home-screen icons, and a service worker, so it installs like a
+native app and **works fully offline**. On iPhone/iPad: open the site in
+Safari → Share → **Add to Home Screen** — it launches full-screen
+(standalone, no browser chrome) as "JRC". On Android/desktop Chrome, use the
 "Install app" prompt. Both the Render app and the GitHub Pages build are
 installable.
 

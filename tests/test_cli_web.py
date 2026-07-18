@@ -67,7 +67,7 @@ class TestWeb:
         resp = client.get("/")
         assert resp.status_code == 200
         html = resp.get_data(as_text=True)
-        assert "SAR Risk Management Calculator" in html
+        assert "Risk Calculator" in html
 
     def test_api_scan(self, client):
         resp = client.get("/api/scan?tickers=AAPL,NVDA&source=offline")

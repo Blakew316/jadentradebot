@@ -12,7 +12,7 @@ class TestSitegen:
         data = build_site(out, symbols=["AAPL", "TSLA"], source="offline")
 
         html = (out / "index.html").read_text(encoding="utf-8")
-        assert "SAR Risk Management Calculator" in html
+        assert "Risk Calculator" in html
         assert (out / ".nojekyll").exists()
 
         scan_json = json.loads((out / "data" / "scan.json").read_text())

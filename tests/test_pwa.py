@@ -22,7 +22,8 @@ class TestPwaEndpoints:
         assert resp.status_code == 200
         assert resp.mimetype == "application/manifest+json"
         m = json.loads(resp.get_data(as_text=True))
-        assert m["name"] == "SAR Risk Management Calculator"
+        assert m["name"] == "Jaden's Risk Calculator"
+        assert m["short_name"] == "JRC"
         assert m["display"] == "standalone"
         assert m["start_url"] == "./"
         assert len(m["icons"]) >= 3

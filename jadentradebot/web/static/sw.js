@@ -1,9 +1,9 @@
-/* Service worker for the SAR Risk Management Calculator PWA.
+/* Service worker for the Jaden's Risk Calculator (JRC) PWA.
    The app is fully client-side, so a small cache-first shell makes it work
    offline once installed. Bump CACHE on breaking asset changes. */
 "use strict";
 
-const CACHE = "sar-calc-v1";
+const CACHE = "jrc-v2";
 const SHELL = [
   "./",
   "manifest.webmanifest",

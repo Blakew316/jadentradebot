@@ -137,32 +137,30 @@ class TestCalculatorOnlySite:
 
 
 class TestCalculator:
-    """The SAR Risk Management Calculator — replica of the Calconic original
-    (title, inputs, risk dropdown, dark formula boxes, sheet link)."""
+    """Jaden's Risk Calculator — shares-only risk sizing (Calconic-derived
+    structure with the option row, sheet link, and prefill removed)."""
 
-    def test_dynamic_page_has_sar_calculator(self):
+    def test_dynamic_page_has_calculator(self):
         app = create_app(watchlist=["AAPL"], source="offline")
         html = app.test_client().get("/").get_data(as_text=True)
-        assert "SAR Risk Management Calculator" in html
-        for el in ("cAccount", "cRisk", "cEntry", "cStop", "cOption",
-                   "rShares", "rOptions"):
+        assert "Risk Calculator" in html
+        for el in ("cAccount", "cRisk", "cEntry", "cStop", "rShares"):
             assert f'id="{el}"' in html
-        assert 'id="cSymbol"' not in html   # prefill removed on request
-        # Elements of the original: risk options, labels, sheet link
+        # Removed on request: prefill, option row, spreadsheet link.
+        for gone in ('id="cSymbol"', 'id="cOption"', 'id="rOptions"',
+                     "Option Value", "Options to Buy",
+                     "sheet.zohopublic.com", "SAR RISK MANAGEMENT SHEET"):
+            assert gone not in html, gone
         for text in ("0.25%", "0.5%", "Account Size $", "Entry Price",
-                     "Stop Loss Price", "Option Value", "Shares to Buy",
-                     "Options to Buy", "Risking 1%"):
+                     "Stop Loss Price", "Shares to Buy", "Risking 1%"):
             assert text in html, text
-        # The spreadsheet link was removed on request.
-        assert "sheet.zohopublic.com" not in html
-        assert "SAR RISK MANAGEMENT SHEET" not in html
 
-    def test_static_page_has_sar_calculator(self, tmp_path):
+    def test_static_page_has_calculator(self, tmp_path):
         from jadentradebot.sitegen import build_site
 
         build_site(tmp_path / "s", symbols=["AAPL"], source="offline")
         html = (tmp_path / "s" / "index.html").read_text()
-        assert "SAR Risk Management Calculator" in html
+        assert "Risk Calculator" in html
         assert 'id="cRisk"' in html
 
 
