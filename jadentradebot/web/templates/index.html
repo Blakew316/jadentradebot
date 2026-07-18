@@ -4,247 +4,286 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>JadenTradeBot — DTR vs ATR Stock Identifier</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2316345c'/%3E%3Crect x='7' y='13' width='3.6' height='9' rx='1' fill='%23ffffff' opacity='.85'/%3E%3Crect x='8.5' y='10.5' width='.9' height='14' fill='%23ffffff' opacity='.55'/%3E%3Crect x='14.2' y='8' width='3.6' height='12' rx='1' fill='%23ffffff'/%3E%3Crect x='15.7' y='5.5' width='.9' height='17' fill='%23ffffff' opacity='.55'/%3E%3Crect x='21.4' y='11' width='3.6' height='10' rx='1' fill='%23ffffff' opacity='.85'/%3E%3Crect x='22.9' y='8.5' width='.9' height='15' fill='%23ffffff' opacity='.55'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f1c33'/%3E%3Crect x='7' y='13' width='3.6' height='9' rx='1' fill='%23ffffff' opacity='.85'/%3E%3Crect x='8.5' y='10.5' width='.9' height='14' fill='%23ffffff' opacity='.55'/%3E%3Crect x='14.2' y='8' width='3.6' height='12' rx='1' fill='%23ffffff'/%3E%3Crect x='15.7' y='5.5' width='.9' height='17' fill='%23ffffff' opacity='.55'/%3E%3Crect x='21.4' y='11' width='3.6' height='10' rx='1' fill='%23ffffff' opacity='.85'/%3E%3Crect x='22.9' y='8.5' width='.9' height='15' fill='%23ffffff' opacity='.55'/%3E%3C/svg%3E">
 <style>
   :root {
-    --bg: #f6f8fa;
+    --bg: #f5f5f7;
     --card: #ffffff;
-    --text: #0f172a;
-    --muted: #5b6472;
-    --faint: #8a93a2;
-    --line: #e2e8f0;
-    --line-soft: #edf1f6;
-    --brand: #16345c;
-    --brand-2: #1f4a85;
+    --text: #14171f;
+    --muted: #5f6b7c;
+    --faint: #8e95a3;
+    --hairline: #e4e7ec;
+    --hairline-soft: #eef1f5;
+    --brand: #0f1c33;
+    --brand-hover: #1b2c4f;
     --accent: #1a56db;
-    --green: #15803d;
-    --amber: #b45309;
-    --red: #b91c1c;
-    --green-icon: #16a34a;
-    --amber-icon: #d97706;
-    --red-icon: #dc2626;
-    --na-icon: #cbd5e1;
-    --radius: 12px;
+    --green: #34c759;
+    --amber: #ff9f0a;
+    --red: #ff453a;
+    --green-text: #217a3c;
+    --amber-text: #9a6200;
+    --red-text: #c22218;
+    --na: #d3d8df;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(16, 24, 40, .04);
+    --shadow-hover: 0 4px 14px rgba(16, 24, 40, .08);
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
   body {
     background: var(--bg);
     color: var(--text);
-    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter",
-          Roboto, Helvetica, Arial, sans-serif;
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+          "Inter", Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
+  /* ---------- header ---------- */
   header {
-    background: var(--card);
-    border-bottom: 1px solid var(--line);
-    padding: 0 28px;
-    height: 60px;
-    display: flex; align-items: center; gap: 14px;
-    position: sticky; top: 0; z-index: 5;
+    background: rgba(255,255,255,.82);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--hairline-soft);
+    height: 58px; padding: 0 28px;
+    display: flex; align-items: center; gap: 16px;
+    position: sticky; top: 0; z-index: 10;
   }
   .brand { display: flex; align-items: center; gap: 10px; }
-  .brand .mark { width: 28px; height: 28px; flex: none; }
-  .brand .name { font-size: 15.5px; font-weight: 700; letter-spacing: -.2px; }
-  .brand .name span { color: var(--brand-2); }
-  header .divider { width: 1px; height: 22px; background: var(--line); }
-  header .product { font-size: 13.5px; font-weight: 500; color: var(--muted); }
-  header .meta { margin-left: auto; color: var(--faint); font-size: 12px; }
+  .brand .mark { width: 27px; height: 27px; flex: none; }
+  .brand .name { font-size: 15px; font-weight: 700; letter-spacing: -.25px; }
+  .brand .name span { color: var(--accent); }
+  header .divider { width: 1px; height: 20px; background: var(--hairline); }
+  header .product { font-size: 13px; font-weight: 500; color: var(--muted); letter-spacing: -.1px; }
+  header .meta { margin-left: auto; color: var(--faint); font-size: 12px; letter-spacing: .1px; }
 
-  main { max-width: 1180px; margin: 0 auto; padding: 26px 22px 56px; }
+  main { max-width: 1160px; margin: 0 auto; padding: 28px 24px 72px; }
 
   .card {
     background: var(--card);
-    border: 1px solid var(--line);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius);
-    box-shadow: 0 1px 2px rgba(15,23,42,.04);
+    box-shadow: var(--shadow);
   }
 
   .icon { width: 15px; height: 15px; flex: none; vertical-align: -3px; }
   .icon.sm { width: 13px; height: 13px; vertical-align: -2px; }
-  .icon.GREEN { color: var(--green-icon); }
-  .icon.ORANGE { color: var(--amber-icon); }
-  .icon.RED { color: var(--red-icon); }
-  .icon.NA { color: var(--na-icon); }
+  .icon.GREEN { color: var(--green); }
+  .icon.ORANGE { color: var(--amber); }
+  .icon.RED { color: var(--red); }
+  .icon.NA { color: var(--na); }
 
+  /* ---------- toolbar ---------- */
   .controls {
-    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
-    padding: 14px 16px; margin-bottom: 14px;
+    display: flex; flex-wrap: wrap; gap: 12px 14px; align-items: center;
+    padding: 16px 18px; margin-bottom: 12px;
   }
-  .controls label {
-    color: var(--faint); font-size: 11px; font-weight: 600;
-    text-transform: uppercase; letter-spacing: .6px;
-  }
+  .controls label { color: var(--faint); font-size: 12px; font-weight: 500; }
   .controls input[type=text] {
     flex: 1 1 320px; min-width: 220px;
     background: var(--card); color: var(--text);
-    border: 1px solid var(--line); border-radius: 8px;
-    padding: 9px 12px; font-size: 14px;
+    border: 1px solid var(--hairline); border-radius: 10px;
+    padding: 10px 13px; font-size: 14px;
+    transition: border-color .15s ease, box-shadow .15s ease;
   }
   .controls input[type=number] {
-    width: 68px; background: var(--card); color: var(--text);
-    border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px;
-    font-size: 14px;
+    width: 70px; background: var(--card); color: var(--text);
+    border: 1px solid var(--hairline); border-radius: 10px; padding: 10px 10px;
+    font-size: 14px; font-variant-numeric: tabular-nums;
+    transition: border-color .15s ease, box-shadow .15s ease;
   }
   .controls select {
     background: var(--card); color: var(--text);
-    border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px;
+    border: 1px solid var(--hairline); border-radius: 10px; padding: 10px 10px;
     font-size: 14px;
   }
   .controls input:focus, .controls select:focus {
     outline: none; border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(26,86,219,.12);
   }
-  .controls button {
+  .btn-primary {
     background: var(--brand); border: 0; color: #fff; font-weight: 600;
-    border-radius: 8px; padding: 10px 24px; cursor: pointer; font-size: 13.5px;
-    letter-spacing: .2px; transition: background .15s ease;
+    border-radius: 10px; padding: 11px 24px; cursor: pointer; font-size: 13.5px;
+    letter-spacing: .1px;
+    transition: background .15s ease, transform .05s ease;
   }
-  .controls button:hover { background: var(--brand-2); }
-  .controls button:disabled { opacity: .5; cursor: wait; }
+  .btn-primary:hover { background: var(--brand-hover); }
+  .btn-primary:active { transform: scale(.985); }
+  .btn-primary:disabled { opacity: .45; cursor: wait; }
+  .btn-quiet {
+    background: var(--card); color: var(--brand);
+    border: 1px solid var(--hairline); font-weight: 600;
+    border-radius: 10px; padding: 10px 18px; cursor: pointer; font-size: 13px;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .btn-quiet:hover { border-color: #c9d2de; background: #fafbfc; }
   .controls a { color: var(--accent); text-decoration: none; }
   .snapshot-note { color: var(--faint); font-size: 12px; }
 
-  .searchRow { padding: 10px 16px; gap: 10px; }
+  .searchRow { padding: 12px 18px; gap: 10px; }
   .searchRow .searchIcon { color: var(--faint); }
   .searchRow input[type=text] { flex: 1 1 280px; min-width: 200px; }
-  .searchRow button {
-    background: var(--card); color: var(--brand);
-    border: 1px solid var(--line); font-weight: 600;
-    border-radius: 8px; padding: 9px 18px; cursor: pointer; font-size: 13px;
-    transition: border-color .15s ease, background .15s ease;
-  }
-  .searchRow button:hover { border-color: var(--brand-2); background: #f8fafc; }
   .searchRow .hint { color: var(--faint); font-size: 11.5px; }
 
+  /* ---------- legend ---------- */
   .legend {
-    display: flex; gap: 22px; flex-wrap: wrap;
-    margin: 6px 4px 18px; color: var(--muted); font-size: 12.5px;
+    display: flex; gap: 24px; flex-wrap: wrap;
+    margin: 14px 6px 18px; color: var(--muted); font-size: 12.5px;
   }
   .legend b { color: var(--text); font-weight: 600; }
 
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  /* ---------- chips ---------- */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
   .chip {
-    background: var(--card); border: 1px solid var(--line);
-    border-radius: 8px; padding: 8px 12px; cursor: pointer;
+    background: var(--card); border: 1px solid var(--hairline);
+    border-radius: 999px; padding: 8px 14px; cursor: pointer;
     font-size: 12.5px; color: var(--muted);
     display: inline-flex; align-items: center; gap: 8px;
-    transition: border-color .15s ease, box-shadow .15s ease;
+    transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease;
   }
-  .chip:hover { border-color: #c9d4e3; box-shadow: 0 2px 6px rgba(15,23,42,.07); }
+  .chip:hover { border-color: #cfd6df; box-shadow: var(--shadow-hover); }
+  .chip:active { transform: scale(.98); }
   .chip .sym { font-weight: 700; color: var(--text); letter-spacing: .2px; }
   .chip .pct { font-weight: 700; font-variant-numeric: tabular-nums; }
-  .chip.GREEN .pct { color: var(--green); }
-  .chip.ORANGE .pct { color: var(--amber); }
-  .chip.RED .pct { color: var(--red); }
+  .chip.GREEN .pct { color: var(--green-text); }
+  .chip.ORANGE .pct { color: var(--amber-text); }
+  .chip.RED .pct { color: var(--red-text); }
   .chip.ERR { cursor: default; color: var(--faint); }
 
-  .statusMsg { color: var(--muted); margin: 10px 4px 14px; font-size: 13px; }
+  .statusMsg { color: var(--muted); margin: 10px 6px 14px; font-size: 13px; }
 
-  .tableWrap { overflow-x: auto; }
+  /* ---------- table ---------- */
+  .tableWrap { overflow-x: auto; overflow-y: hidden; }
   table { width: 100%; border-collapse: collapse; min-width: 900px; }
   thead th {
     text-align: right; font-size: 10.5px; font-weight: 600;
     text-transform: uppercase; letter-spacing: .8px;
-    color: var(--faint); padding: 12px 14px;
-    border-bottom: 1px solid var(--line);
-    background: #fbfcfe;
+    color: var(--faint); padding: 13px 16px;
+    border-bottom: 1px solid var(--hairline);
+    background: #fbfcfd;
     cursor: pointer; user-select: none; white-space: nowrap;
   }
+  thead th:hover { color: var(--muted); }
   thead th:first-child, thead th:nth-child(2) { text-align: left; }
   tbody td {
-    padding: 11px 14px; text-align: right;
-    border-bottom: 1px solid var(--line-soft);
+    padding: 12px 16px; text-align: right;
+    border-bottom: 1px solid var(--hairline-soft);
     font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 13.5px;
   }
   tbody tr:last-child td { border-bottom: 0; }
   tbody td:first-child, tbody td:nth-child(2) { text-align: left; }
-  tbody tr { cursor: pointer; transition: background .1s ease; }
-  tbody tr:hover { background: #f8fafc; }
+  tbody tr { cursor: pointer; transition: background .12s ease; }
+  tbody tr:hover { background: #f7f9fb; }
   tbody tr.selected { background: #eef4ff; }
   .sym-cell { font-weight: 700; letter-spacing: .2px; }
   .status { font-weight: 600; display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; }
-  .status.GREEN { color: var(--green); }
-  .status.ORANGE { color: var(--amber); }
-  .status.RED { color: var(--red); }
+  .status.GREEN { color: var(--green-text); }
+  .status.ORANGE { color: var(--amber-text); }
+  .status.RED { color: var(--red-text); }
   .err-row td { color: var(--faint); font-style: italic; }
 
   .meter {
     display: inline-block; width: 84px; height: 4px; border-radius: 4px;
-    background: var(--line-soft); vertical-align: 2px; margin-left: 10px;
+    background: var(--hairline-soft); vertical-align: 2px; margin-left: 10px;
     overflow: hidden;
   }
-  .meter i { display: block; height: 100%; border-radius: 4px; }
+  .meter i { display: block; height: 100%; border-radius: 4px; transition: width .3s ease; }
 
-  #chartPanel { margin-top: 18px; padding: 18px 20px 10px; display: none; }
-  #chartPanel h2 {
-    margin: 0 0 4px; font-size: 15.5px; font-weight: 700; letter-spacing: -.2px;
-    display: flex; align-items: center; gap: 8px;
-  }
+  /* ---------- chart ---------- */
+  #chartPanel { margin-top: 16px; padding: 20px 22px 12px; display: none; }
+  #chartPanel h2 { margin: 0 0 4px; font-size: 16px; font-weight: 700; letter-spacing: -.25px; }
   .chartLabel {
     display: inline-flex; align-items: center; gap: 7px;
     font-size: 12.5px; font-weight: 600;
-    border-radius: 8px; padding: 6px 12px; margin: 6px 0 10px;
+    border-radius: 999px; padding: 6px 13px; margin: 6px 0 10px;
     background: var(--bg); color: var(--muted);
     font-variant-numeric: tabular-nums;
-    border: 1px solid var(--line-soft);
+    border: 1px solid var(--hairline-soft);
   }
-  .chartLabel.GREEN { background: #f0faf3; color: var(--green); border-color: #d3ecd9; }
-  .chartLabel.ORANGE { background: #fdf6ec; color: var(--amber); border-color: #f3e3c8; }
-  .chartLabel.RED { background: #fdf1f0; color: var(--red); border-color: #f4d5d2; }
+  .chartLabel.GREEN { background: #f0faf3; color: var(--green-text); border-color: #d6eedd; }
+  .chartLabel.ORANGE { background: #fdf6ec; color: var(--amber-text); border-color: #f3e5ca; }
+  .chartLabel.RED { background: #fdf1f0; color: var(--red-text); border-color: #f6d7d4; }
   #chartMeta { color: var(--muted); font-size: 12.5px; margin-bottom: 8px; }
   #chartMeta b { color: var(--text); font-weight: 600; }
   svg.plot text { fill: var(--faint); font-size: 10.5px;
                   font-family: "SF Mono", "Menlo", "Consolas", monospace; }
 
-  /* Position size calculator */
-  #calcPanel { margin-top: 18px; padding: 18px 20px 20px; }
-  #calcPanel h2 { margin: 0 0 2px; font-size: 15.5px; font-weight: 700; letter-spacing: -.2px; }
-  .calcSub { color: var(--muted); font-size: 12.5px; margin: 0 0 14px; }
-  .calcGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
-  @media (max-width: 760px) { .calcGrid { grid-template-columns: 1fr; } }
-  .calcInputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; align-content: start; }
-  .calcInputs label {
-    display: flex; flex-direction: column; gap: 5px;
-    color: var(--faint); font-size: 11px; font-weight: 600;
-    text-transform: uppercase; letter-spacing: .6px;
+  /* ---------- SAR Risk Management Calculator ---------- */
+  #calcPanel { margin-top: 16px; padding: 0; overflow: hidden; }
+  .sarTitle {
+    background: #fbfcfd; padding: 15px 24px;
+    border-bottom: 1px solid var(--hairline);
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
   }
-  .calcInputs input, .calcInputs select {
-    background: var(--card); color: var(--text);
-    border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px;
-    font-size: 14px; font-variant-numeric: tabular-nums; width: 100%;
+  .sarTitle h2 { margin: 0; font-weight: 700; font-size: 16px; letter-spacing: -.25px; color: var(--text); }
+  .sarTitle .sub { color: var(--faint); font-size: 12px; }
+  .sarGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; padding: 20px 24px; }
+  @media (max-width: 720px) { .sarGrid { grid-template-columns: 1fr; } }
+  .sarCol { display: flex; flex-direction: column; gap: 14px; }
+  .sar-el .sarLabel {
+    font-weight: 600; font-size: 12px; color: var(--muted); line-height: 1;
+    display: flex; align-items: center; gap: 6px; margin-bottom: 7px;
   }
-  .calcInputs input:focus, .calcInputs select:focus {
+  .sar-el .sarLabel .info {
+    color: var(--faint); font-size: 10px; cursor: help; font-weight: 700;
+    border: 1.3px solid var(--faint); border-radius: 50%;
+    width: 14px; height: 14px; flex: none;
+    display: inline-flex; align-items: center; justify-content: center; font-style: normal;
+  }
+  .sarField { display: flex; align-items: center; gap: 7px; }
+  .sarField .prefix { font-weight: 500; font-size: 13px; color: var(--faint); }
+  .sarField input, .sarField select {
+    width: 100%; min-width: 0; font-size: 14px; color: var(--text); background: var(--card);
+    border: 1px solid var(--hairline); border-radius: 10px; padding: 10px 12px;
+    font-family: inherit; font-variant-numeric: tabular-nums;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .sarField input:focus, .sarField select:focus {
     outline: none; border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(26,86,219,.12);
   }
-  .calcResults { display: flex; flex-direction: column; gap: 0; align-self: start;
-    background: #fbfcfe; border: 1px solid var(--line-soft); border-radius: 10px; padding: 6px 16px; }
-  .calcRow {
-    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
-    padding: 9px 0; border-bottom: 1px solid var(--line-soft);
-    color: var(--muted); font-size: 13px;
+  .sarStep {
+    flex: none; width: 34px; height: 38px; cursor: pointer; user-select: none;
+    border: 1px solid var(--hairline); border-radius: 10px; background: var(--card);
+    color: var(--muted); font-weight: 600; font-size: 16px; line-height: 1; font-family: inherit;
+    transition: border-color .15s ease, background .15s ease;
   }
-  .calcRow:last-child { border-bottom: 0; }
-  .calcRow b { color: var(--text); font-variant-numeric: tabular-nums; font-size: 13.5px; }
-  .calcRow.hero { padding: 12px 0; }
-  .calcRow.hero b { color: var(--brand); font-size: 24px; font-weight: 700; }
-  .calcRow .side { font-size: 11px; font-weight: 700; letter-spacing: .5px;
-    border-radius: 5px; padding: 2px 7px; }
-  .calcRow .side.long { background: #f0faf3; color: var(--green); }
-  .calcRow .side.short { background: #fdf1f0; color: var(--red); }
-  .calcHint { color: var(--faint); font-size: 12px; padding: 10px 0; }
+  .sarStep:hover { background: #fafbfc; border-color: #c9d2de; color: var(--text); }
+  .sar-formula {
+    background: var(--brand); border-radius: 12px; padding: 16px 18px;
+    display: flex; flex-direction: column; justify-content: center; gap: 7px;
+  }
+  .sar-formula .sarFormulaLabel {
+    font-weight: 600; font-size: 12px; color: rgba(255,255,255,.68); line-height: 1.2;
+  }
+  .sar-formula .sarResult {
+    font-weight: 700; font-size: 30px; color: #fff; line-height: 1;
+    font-variant-numeric: tabular-nums; letter-spacing: -.5px;
+  }
+  .sarInfoBar {
+    padding: 15px 24px 18px; border-top: 1px solid var(--hairline-soft);
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .sarInfoBar .sarRef { font-weight: 600; font-size: 13px; color: var(--text); }
+  .sarSheetBtn {
+    display: inline-block; background: var(--brand);
+    border-radius: 10px; color: #fff !important; font-weight: 600; font-size: 13px;
+    padding: 11px 20px; text-align: center; text-decoration: none; font-family: inherit;
+    letter-spacing: .2px; transition: background .15s ease;
+  }
+  .sarSheetBtn:hover { background: var(--brand-hover); }
+  .sarNote { color: var(--faint); font-size: 11.5px; margin-left: auto; }
 
+  /* ---------- footer ---------- */
   footer {
-    border-top: 1px solid var(--line);
-    color: var(--faint); font-size: 11.5px; margin-top: 36px;
-    padding-top: 18px; text-align: center; line-height: 1.8;
+    border-top: 1px solid var(--hairline);
+    color: var(--faint); font-size: 11.5px; margin-top: 40px;
+    padding-top: 20px; text-align: center; line-height: 1.9;
   }
   footer a { color: var(--accent); text-decoration: none; }
 
   @media (max-width: 640px) {
-    main { padding: 16px 12px 40px; }
+    main { padding: 16px 12px 48px; }
     header { padding: 0 16px; }
     header .product, header .meta { display: none; }
   }
@@ -275,7 +314,7 @@
       <path d="M13.2 13.2l3.6 3.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
     </symbol>
     <symbol id="i-mark" viewBox="0 0 32 32">
-      <rect width="32" height="32" rx="7" fill="#16345c"/>
+      <rect width="32" height="32" rx="7" fill="#0f1c33"/>
       <rect x="7" y="13" width="3.6" height="9" rx="1" fill="#fff" opacity=".85"/>
       <rect x="8.5" y="10.5" width=".9" height="14" fill="#fff" opacity=".55"/>
       <rect x="14.2" y="8" width="3.6" height="12" rx="1" fill="#fff"/>
@@ -317,7 +356,7 @@
       <option value="stooq"{% if source == 'stooq' %} selected{% endif %}>stooq</option>
       <option value="offline"{% if source == 'offline' %} selected{% endif %}>offline demo</option>
     </select>
-    <button id="scanBtn">Run scan</button>
+    <button id="scanBtn" class="btn-primary">Run scan</button>
   </div>
   {% endif %}
 
@@ -330,7 +369,7 @@
     {% else %}
     <input id="search" type="text" list="symlist" spellcheck="false" autocomplete="off"
            placeholder="Search any stock — ticker or company name, e.g. PLTR or Palantir">
-    <button id="addBtn" type="button">Add to scan</button>
+    <button id="addBtn" type="button" class="btn-quiet">Add to scan</button>
     <span class="hint">Enter adds it to the watchlist and rescans</span>
     <datalist id="symlist"></datalist>
     {% endif %}
@@ -374,37 +413,78 @@
   </div>
 
   <div id="calcPanel" class="card">
-    <h2>Position Size Calculator</h2>
-    <p class="calcSub">Risk-based sizing — how many shares to trade so a stop-out
-      costs only the risk you choose. Pick a scanned symbol to auto-fill the
-      entry and an ATR-based stop, or type your own prices.</p>
-    <div class="calcGrid">
-      <div class="calcInputs">
-        <label>Account size ($)
-          <input id="cAccount" type="number" value="10000" min="0" step="100"></label>
-        <label>Risk per trade (%)
-          <input id="cRiskPct" type="number" value="1" min="0.05" max="100" step="0.05"></label>
-        <label>Symbol (prefill from scan)
-          <select id="cSymbol"><option value="">— manual entry —</option></select></label>
-        <label>ATR stop multiple
-          <input id="cAtrMult" type="number" value="1.5" min="0.1" step="0.1"></label>
-        <label>Entry price ($)
-          <input id="cEntry" type="number" min="0" step="0.01" placeholder="e.g. 100.00"></label>
-        <label>Stop-loss price ($)
-          <input id="cStop" type="number" min="0" step="0.01" placeholder="e.g. 95.00"></label>
-        <label>Profit target (R multiple)
-          <input id="cRMult" type="number" value="2" min="0.5" step="0.5"></label>
+    <div class="sarTitle">
+      <h2>SAR Risk Management Calculator</h2>
+      <span class="sub">Size share and option positions by the % of your account you risk</span>
+    </div>
+    <div class="sarGrid">
+      <div class="sarCol">
+        <div class="sar-el">
+          <div class="sarLabel">Account Size $
+            <i class="info" title="Your total trading account value in dollars">i</i></div>
+          <div class="sarField"><span class="prefix">$</span>
+            <input id="cAccount" type="text" inputmode="decimal" value="10,000" spellcheck="false">
+          </div>
+        </div>
+        <div class="sar-el">
+          <div class="sarLabel">Risk Management</div>
+          <div class="sarField">
+            <select id="cRisk">
+              <option value="0.5">0.5%</option>
+              <option value="1" selected>1%</option>
+              <option value="2">2%</option>
+            </select>
+          </div>
+        </div>
+        <div class="sar-el">
+          <div class="sarLabel">Entry Price
+            <i class="info" title="The price at which you plan to enter the trade">i</i></div>
+          <div class="sarField"><span class="prefix">$</span>
+            <input id="cEntry" type="number" min="0" step="0.01" value="0.00">
+            <button type="button" class="sarStep" data-target="cEntry" data-step="-1" aria-label="Decrement">−</button>
+            <button type="button" class="sarStep" data-target="cEntry" data-step="1" aria-label="Increment">+</button>
+          </div>
+        </div>
+        <div class="sar-el">
+          <div class="sarLabel">Stop Loss Price
+            <i class="info" title="The price at which you exit if the trade goes against you">i</i></div>
+          <div class="sarField"><span class="prefix">$</span>
+            <input id="cStop" type="number" min="0" step="0.01" value="0.00">
+            <button type="button" class="sarStep" data-target="cStop" data-step="-1" aria-label="Decrement">−</button>
+            <button type="button" class="sarStep" data-target="cStop" data-step="1" aria-label="Increment">+</button>
+          </div>
+        </div>
+        <div class="sar-el">
+          <div class="sarLabel">Option Value</div>
+          <div class="sarField">
+            <input id="cOption" type="number" min="0" step="0.05" value="0.00">
+            <button type="button" class="sarStep" data-target="cOption" data-step="-0.05" aria-label="Decrement">−</button>
+            <button type="button" class="sarStep" data-target="cOption" data-step="0.05" aria-label="Increment">+</button>
+          </div>
+        </div>
+        <div class="sar-el">
+          <div class="sarLabel">Prefill From Scan (optional)</div>
+          <div class="sarField">
+            <select id="cSymbol"><option value="">— pick a scanned symbol —</option></select>
+          </div>
+        </div>
       </div>
-      <div class="calcResults" id="calcResults">
-        <div class="calcRow"><span>Direction</span><b id="rSide">—</b></div>
-        <div class="calcRow"><span>Max risk amount</span><b id="rRisk">—</b></div>
-        <div class="calcRow"><span>Risk per share (entry − stop)</span><b id="rPerShare">—</b></div>
-        <div class="calcRow hero"><span>Shares to trade</span><b id="rShares">—</b></div>
-        <div class="calcRow"><span>Position value</span><b id="rValue">—</b></div>
-        <div class="calcRow"><span>Target price</span><b id="rTarget">—</b></div>
-        <div class="calcRow"><span>Potential profit at target</span><b id="rProfit">—</b></div>
-        <div class="calcHint" id="calcHint">Enter an entry and stop price (or pick a symbol) to size a trade.</div>
+      <div class="sarCol">
+        <div class="sar-formula">
+          <div class="sarFormulaLabel" id="rSharesLabel">Shares to Buy, Risking 1%</div>
+          <div class="sarResult" id="rShares">—</div>
+        </div>
+        <div class="sar-formula">
+          <div class="sarFormulaLabel" id="rOptionsLabel">Options to Buy, Risking 1%</div>
+          <div class="sarResult" id="rOptions">—</div>
+        </div>
       </div>
+    </div>
+    <div class="sarInfoBar">
+      <span class="sarRef">Reference to Spreadsheet</span>
+      <a class="sarSheetBtn" target="_blank" rel="noopener"
+         href="https://sheet.zohopublic.com/sheet/published/jxuhdc7fc0b755d6940a7ba2d90adacddb80b">SAR RISK MANAGEMENT SHEET</a>
+      <span class="sarNote">Shares = account × risk ÷ (entry − stop) · Options = account × risk ÷ (premium × 100)</span>
     </div>
   </div>
 
@@ -421,8 +501,8 @@
 <script>
 "use strict";
 const STATIC = window.STATIC_DATA || null;
-const COLORS = { GREEN: "#16a34a", ORANGE: "#d97706", RED: "#dc2626", NA: "#cbd5e1" };
-const CANDLE_UP = "#16a34a", CANDLE_DOWN = "#dc2626";
+const COLORS = { GREEN: "#34c759", ORANGE: "#ff9f0a", RED: "#ff453a", NA: "#d3d8df" };
+const CANDLE_UP = "#2eb15a", CANDLE_DOWN = "#e5484d";
 const STATUS_LABEL = { GREEN: "Room to move", ORANGE: "Extended", RED: "Exhausted" };
 const STATUS_ICON = { GREEN: "i-ok", ORANGE: "i-warn", RED: "i-stop", NA: "i-na" };
 let lastRows = [];
@@ -593,10 +673,8 @@ function resolveSymbol(raw) {
   if (!q) return "";
   const upper = q.toUpperCase();
   if (directory.some(d => d.symbol === upper)) return upper;
-  // Try a company-name match ("palantir" -> PLTR)
   const byName = directory.find(d => d.name.toUpperCase().includes(upper));
   if (byName && !/^[A-Z0-9.^=-]{1,6}$/.test(upper)) return byName.symbol;
-  // Otherwise treat the input as a raw ticker
   return upper.replace(/[^A-Z0-9.^=-]/g, "");
 }
 
@@ -615,6 +693,8 @@ function addSymbol() {
     if (row) showChart(sym);
   });
 }
+
+// ---- chart -----------------------------------------------------------------
 
 function applyChart(data) {
   const lbl = $("chartStudyLabel");
@@ -687,7 +767,7 @@ function drawChart(bars) {
     const line = document.createElementNS(svgNS, "line");
     line.setAttribute("x1", padL); line.setAttribute("x2", W - padR);
     line.setAttribute("y1", gy); line.setAttribute("y2", gy);
-    line.setAttribute("stroke", "#eef1f6"); line.setAttribute("stroke-width", "1");
+    line.setAttribute("stroke", "#f0f2f5"); line.setAttribute("stroke-width", "1");
     svg.appendChild(line);
     const t = document.createElementNS(svgNS, "text");
     t.setAttribute("x", W - padR + 6); t.setAttribute("y", gy + 3.5);
@@ -719,7 +799,6 @@ function drawChart(bars) {
     rect.appendChild(title);
     svg.appendChild(rect);
 
-    // DTR% strip under each bar, coloured by that day's status
     const strip = document.createElementNS(svgNS, "rect");
     strip.setAttribute("x", cx - cw / 2);
     strip.setAttribute("y", H - padB + 6);
@@ -743,13 +822,38 @@ function drawChart(bars) {
   $("chart").appendChild(svg);
 }
 
-// ---- position size calculator ---------------------------------------------
+// ---- SAR Risk Management Calculator ---------------------------------------
+// Shares to Buy, Risking r% = account × r% ÷ (entry − stop)
+// Options to Buy, Risking r% = account × r% ÷ (option premium × 100)
 
-const money = (v) => "$" + Number(v).toLocaleString("en-US",
-  { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function sarAccount() {
+  return parseFloat(String($("cAccount").value).replace(/,/g, "")) || 0;
+}
+
+function sarRecalc() {
+  const account = sarAccount();
+  const riskPct = parseFloat($("cRisk").value);
+  const entry = parseFloat($("cEntry").value) || 0;
+  const stop = parseFloat($("cStop").value) || 0;
+  const option = parseFloat($("cOption").value) || 0;
+  const riskAmt = account * riskPct / 100;
+  const pctLabel = riskPct === 0.5 ? "0.5%" : riskPct + "%";
+
+  $("rSharesLabel").textContent = `Shares to Buy, Risking ${pctLabel}`;
+  $("rOptionsLabel").textContent = `Options to Buy, Risking ${pctLabel}`;
+
+  const perShare = entry - stop;
+  const shares = riskAmt > 0 && perShare > 0 ? Math.floor(riskAmt / perShare) : null;
+  $("rShares").textContent = shares === null ? "—" : shares.toLocaleString("en-US");
+
+  const perContract = option * 100;
+  const options = riskAmt > 0 && perContract > 0 ? Math.floor(riskAmt / perContract) : null;
+  $("rOptions").textContent = options === null ? "—" : options.toLocaleString("en-US");
+}
 
 function calcSymbolOptions() {
   const sel = $("cSymbol");
+  if (!sel) return;
   const keep = sel.value;
   while (sel.options.length > 1) sel.remove(1);
   for (const r of lastRows) {
@@ -765,61 +869,35 @@ function calcSymbolOptions() {
 function calcPrefill() {
   const row = lastRows.find(r => r.ok && r.symbol === $("cSymbol").value);
   if (!row) return;
-  const mult = parseFloat($("cAtrMult").value) || 1.5;
   $("cEntry").value = row.last_close.toFixed(2);
-  $("cStop").value = Math.max(row.last_close - mult * row.atr, 0.01).toFixed(2);
-  recalc();
-}
-
-function recalc() {
-  const account = parseFloat($("cAccount").value);
-  const riskPct = parseFloat($("cRiskPct").value);
-  const entry = parseFloat($("cEntry").value);
-  const stop = parseFloat($("cStop").value);
-  const rMult = parseFloat($("cRMult").value) || 2;
-  const hint = $("calcHint");
-  const out = (id, v) => { $(id).textContent = v; };
-
-  const reset = (msg) => {
-    for (const id of ["rSide","rRisk","rPerShare","rShares","rValue","rTarget","rProfit"]) out(id, "—");
-    $("rSide").innerHTML = "—";
-    hint.textContent = msg;
-  };
-
-  if (!(account > 0) || !(riskPct > 0)) return reset("Enter your account size and risk percent.");
-  if (!(entry > 0) || !(stop > 0)) return reset("Enter an entry and stop price (or pick a symbol) to size a trade.");
-  if (entry === stop) return reset("Entry and stop can't be equal — there is no risk per share to size against.");
-
-  const isLong = stop < entry;
-  const perShare = Math.abs(entry - stop);
-  const riskAmt = account * riskPct / 100;
-  const shares = Math.floor(riskAmt / perShare);
-  if (shares < 1) {
-    return reset(`Risk budget ${money(riskAmt)} is below the ${money(perShare)} risk of a single share — widen the risk % or tighten the stop.`);
-  }
-  const value = shares * entry;
-  const target = isLong ? entry + rMult * perShare : entry - rMult * perShare;
-  const profit = shares * rMult * perShare;
-
-  $("rSide").innerHTML = isLong
-    ? '<span class="side long">LONG</span>'
-    : '<span class="side short">SHORT</span>';
-  out("rRisk", money(riskAmt) + ` (${riskPct}%)`);
-  out("rPerShare", money(perShare));
-  out("rShares", shares.toLocaleString("en-US"));
-  out("rValue", money(value) + ` (${(value / account * 100).toFixed(0)}% of account)`);
-  out("rTarget", money(target) + ` (${rMult}R)`);
-  out("rProfit", money(profit));
-  hint.textContent = isLong
-    ? `Buy ${shares.toLocaleString("en-US")} shares; a stop-out at ${money(stop)} loses ~${money(shares * perShare)}.`
-    : `Short ${shares.toLocaleString("en-US")} shares; a stop-out at ${money(stop)} loses ~${money(shares * perShare)}.`;
+  $("cStop").value = Math.max(row.last_close - 1.5 * row.atr, 0.01).toFixed(2);
+  sarRecalc();
 }
 
 $("cSymbol").addEventListener("change", calcPrefill);
-$("cAtrMult").addEventListener("input", () => { if ($("cSymbol").value) calcPrefill(); else recalc(); });
-for (const id of ["cAccount", "cRiskPct", "cEntry", "cStop", "cRMult"]) {
-  $(id).addEventListener("input", recalc);
+$("cAccount").addEventListener("input", sarRecalc);
+$("cAccount").addEventListener("blur", () => {
+  const v = sarAccount();
+  if (v > 0) $("cAccount").value = v.toLocaleString("en-US");
+  sarRecalc();
+});
+for (const id of ["cRisk", "cEntry", "cStop", "cOption"]) {
+  $(id).addEventListener("input", sarRecalc);
+  $(id).addEventListener("change", sarRecalc);
 }
+document.querySelectorAll(".sarStep").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const input = $(btn.dataset.target);
+    const step = parseFloat(btn.dataset.step);
+    const decimals = Math.abs(step) < 1 ? 2 : 2;
+    const next = Math.max((parseFloat(input.value) || 0) + step, 0);
+    input.value = next.toFixed(decimals);
+    sarRecalc();
+  });
+});
+sarRecalc();
+
+// ---- wiring ----------------------------------------------------------------
 
 document.querySelectorAll("thead th").forEach((th) => {
   th.onclick = () => {

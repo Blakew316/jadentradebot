@@ -135,20 +135,30 @@ class TestSearchUi:
 
 
 class TestCalculator:
-    def test_dynamic_page_has_calculator(self):
+    """The SAR Risk Management Calculator — replica of the Calconic original
+    (title, inputs, risk dropdown, dark formula boxes, sheet link)."""
+
+    def test_dynamic_page_has_sar_calculator(self):
         app = create_app(watchlist=["AAPL"], source="offline")
         html = app.test_client().get("/").get_data(as_text=True)
-        assert "Position Size Calculator" in html
-        for el in ("cAccount", "cRiskPct", "cSymbol", "cAtrMult", "cEntry",
-                   "cStop", "cRMult", "rShares", "rTarget"):
+        assert "SAR Risk Management Calculator" in html
+        for el in ("cAccount", "cRisk", "cEntry", "cStop", "cOption",
+                   "cSymbol", "rShares", "rOptions"):
             assert f'id="{el}"' in html
+        # Elements of the original: risk options, labels, sheet link
+        for text in ("0.5%", "Account Size $", "Entry Price", "Stop Loss Price",
+                     "Option Value", "Shares to Buy, Risking 1%",
+                     "Options to Buy, Risking 1%", "Reference to Spreadsheet",
+                     "SAR RISK MANAGEMENT SHEET",
+                     "sheet.zohopublic.com/sheet/published/"):
+            assert text in html, text
 
-    def test_static_page_has_calculator(self, tmp_path):
+    def test_static_page_has_sar_calculator(self, tmp_path):
         from jadentradebot.sitegen import build_site
 
         build_site(tmp_path / "s", symbols=["AAPL"], source="offline")
         html = (tmp_path / "s" / "index.html").read_text()
-        assert "Position Size Calculator" in html
+        assert "SAR Risk Management Calculator" in html
         assert 'id="cSymbol"' in html
 
 
