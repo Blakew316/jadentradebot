@@ -23,7 +23,7 @@ import os
 from pathlib import Path
 
 import pandas as pd
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, send_from_directory
 
 from jadentradebot import __version__
 from jadentradebot.data import DEFAULT_LOOKBACK_DAYS
@@ -163,6 +163,28 @@ def create_app(
                 "rows": [_row_payload(r) for r in rows],
             }
         )
+
+    # ---- PWA assets, served at root scope -------------------------------
+    @app.get("/manifest.webmanifest")
+    def manifest():
+        return send_from_directory(
+            app.static_folder, "manifest.webmanifest",
+            mimetype="application/manifest+json",
+        )
+
+    @app.get("/sw.js")
+    def service_worker():
+        return send_from_directory(
+            app.static_folder, "sw.js", mimetype="application/javascript"
+        )
+
+    @app.get("/icons/<path:name>")
+    def icons(name: str):
+        return send_from_directory(f"{app.static_folder}/icons", name)
+
+    @app.get("/apple-touch-icon.png")
+    def apple_touch_icon():
+        return send_from_directory(f"{app.static_folder}/icons", "icon-180.png")
 
     @app.get("/api/symbols")
     def api_symbols():

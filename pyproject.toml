@@ -26,7 +26,12 @@ jadentradebot = "jadentradebot.cli:main"
 include = ["jadentradebot*"]
 
 [tool.setuptools.package-data]
-"jadentradebot.web" = ["templates/*.html", "symbols.json"]
+"jadentradebot.web" = [
+    "templates/*.html",
+    "symbols.json",
+    "static/*",
+    "static/icons/*",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

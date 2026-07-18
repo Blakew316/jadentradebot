@@ -15,6 +15,7 @@ Output layout::
 from __future__ import annotations
 
 import json
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -72,4 +73,12 @@ def build_site(
     (out / "data" / "scan.json").write_text(
         json.dumps(static_data, indent=2), encoding="utf-8"
     )
+
+    # PWA assets: the snapshot is installable/offline-capable just like the
+    # live app (manifest, service worker, icons copied to the site root).
+    static_dir = Path(__file__).parent / "web" / "static"
+    for name in ("manifest.webmanifest", "sw.js"):
+        shutil.copy2(static_dir / name, out / name)
+    shutil.copytree(static_dir / "icons", out / "icons", dirs_exist_ok=True)
+    shutil.copy2(static_dir / "icons" / "icon-180.png", out / "apple-touch-icon.png")
     return static_data

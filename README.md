@@ -82,6 +82,14 @@ completely self-contained — no CDNs.
 
 The scanner itself remains available through the CLI and the JSON API.
 
+**Install it as an app (PWA).** The site ships a web-app manifest, home-screen
+icons, and a service worker, so it installs like a native app and **works
+fully offline**. On iPhone/iPad: open the site in Safari → Share →
+**Add to Home Screen** — it launches full-screen (standalone, no browser
+chrome) with the JadenTradeBot icon. On Android/desktop Chrome, use the
+"Install app" prompt. Both the Render app and the GitHub Pages build are
+installable.
+
 ### JSON API
 
 - `GET /api/scan?tickers=AAPL,TSLA&atr_length=14&source=auto`
