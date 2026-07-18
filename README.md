@@ -130,6 +130,20 @@ pull live Yahoo/Stooq data even though your machine may not:
 3. Your dashboard appears at `https://<user>.github.io/<repo>/`, with the raw
    scan JSON at `.../data/scan.json`.
 
+**Troubleshooting deploys**
+
+- If the deploy job fails with *"Branch … is not allowed to deploy to
+  github-pages due to environment protection rules"*, allow the branch under
+  **Settings → Environments → github-pages → Deployment branches**.
+- Scheduled (cron) runs only execute the workflow on the repository's
+  **default branch** — if you change the default branch, make sure
+  `pages.yml` exists there, then confirm runs appear in the Actions tab.
+  GitHub also pauses cron schedules after ~60 days without repo activity;
+  a manual "Run workflow" revives them.
+- If live data has a total outage, the build fails on purpose and the
+  previous snapshot stays live; partial failures still deploy, with the
+  failed symbols listed in the table.
+
 To change the deployed watchlist permanently, edit `DEFAULT_WATCHLIST` in
 `jadentradebot/scanner.py` (or pass `-t` flags in the workflow's sitegen step).
 The snapshot page keeps the chips, sortable table, and per-symbol charts —

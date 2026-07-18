@@ -108,9 +108,15 @@ _STOOQ_MARKET_SUFFIX = re.compile(r"\.(us|uk|de|jp|hk|hu|pl|fr|it)$")
 
 def _stooq_symbol(symbol: str) -> str:
     """Map a ticker to stooq's naming: AAPL -> aapl.us, BRK.B -> brk-b.us;
-    an explicit market suffix like AAPL.US is honoured as-is."""
+    an explicit market suffix like AAPL.US is honoured as-is. Indices keep
+    their ^ form (^SPX -> ^spx) and Yahoo FX pairs drop the =X suffix
+    (EURUSD=X -> eurusd) — stooq uses no market suffix for either."""
     sym = symbol.lower()
-    if _STOOQ_MARKET_SUFFIX.search(sym):
+    if _STOOQ_MARKET_SUFFIX.search(sym) or sym.startswith("^"):
+        return sym
+    if sym.endswith("=x"):
+        return sym[:-2]
+    if "=" in sym:  # other Yahoo-style suffixes (futures): best effort as-is
         return sym
     return sym.replace(".", "-") + ".us"
 

@@ -89,6 +89,8 @@ class TestStandardize:
         assert _stooq_symbol("BRK.B") == "brk-b.us"
         assert _stooq_symbol("AAPL.US") == "aapl.us"
         assert _stooq_symbol("BF-B") == "bf-b.us"
+        assert _stooq_symbol("^GSPC") == "^gspc"      # indices: no .us suffix
+        assert _stooq_symbol("EURUSD=X") == "eurusd"  # FX: strip Yahoo's =X
 
     def test_unknown_source_rejected(self):
         with pytest.raises(ValueError, match="unknown source"):

@@ -13,10 +13,10 @@ on:
       - main
       - claude/trading-stock-atr-identifier-c2wzlm
   schedule:
-    # Every 30 min during US market hours (13:30-20:00 UTC), Mon-Fri,
-    # plus one end-of-day snapshot. GitHub cron runs best-effort.
-    - cron: "*/30 13-20 * * 1-5"
-    - cron: "15 21 * * 1-5"
+    # Every 30 min, 13:00-21:30 UTC Mon-Fri — covers US market hours
+    # (9:30-16:00 ET) in both EDT and EST, plus a post-close snapshot.
+    # GitHub cron is best-effort and only fires on the default branch.
+    - cron: "*/30 13-21 * * 1-5"
   workflow_dispatch:
     inputs:
       tickers:
@@ -33,9 +33,11 @@ permissions:
   pages: write
   id-token: write
 
+# Queue runs instead of cancelling: never interrupt an in-flight production
+# deploy (matches the official Pages starter workflow).
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -56,7 +58,7 @@ jobs:
           if [ -n "$TICKERS" ]; then
             IFS=',' read -ra syms <<< "$TICKERS"
             for s in "${syms[@]}"; do
-              s="$(echo "$s" | xargs)"
+              s="${s//[[:space:]]/}"
               [ -n "$s" ] && args+=(-t "$s")
             done
           fi
