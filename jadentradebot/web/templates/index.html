@@ -2,13 +2,31 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>JadenTradeBot — DTR vs ATR Stock Identifier</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="SAR Calculator">
+<meta name="theme-color" id="themeColorMeta" content="#f5f5f7">
+<title>SAR Risk Management Calculator — JadenTradeBot</title>
+<script>
+  // Apply the saved (or system) theme before first paint to avoid flashing.
+  (function () {
+    try {
+      var t = localStorage.getItem("jtb-theme");
+      if (!t) t = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      document.documentElement.dataset.theme = t;
+    } catch (e) { document.documentElement.dataset.theme = "light"; }
+  })();
+</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f1c33'/%3E%3Crect x='7' y='13' width='3.6' height='9' rx='1' fill='%23ffffff' opacity='.85'/%3E%3Crect x='8.5' y='10.5' width='.9' height='14' fill='%23ffffff' opacity='.55'/%3E%3Crect x='14.2' y='8' width='3.6' height='12' rx='1' fill='%23ffffff'/%3E%3Crect x='15.7' y='5.5' width='.9' height='17' fill='%23ffffff' opacity='.55'/%3E%3Crect x='21.4' y='11' width='3.6' height='10' rx='1' fill='%23ffffff' opacity='.85'/%3E%3Crect x='22.9' y='8.5' width='.9' height='15' fill='%23ffffff' opacity='.55'/%3E%3C/svg%3E">
 <style>
   :root {
     --bg: #f5f5f7;
     --card: #ffffff;
+    --band: #fbfcfd;
+    --field: #ffffff;
+    --hover: #fafbfc;
+    --press: #f2f4f7;
     --text: #14171f;
     --muted: #5f6b7c;
     --faint: #8e95a3;
@@ -16,17 +34,42 @@
     --hairline-soft: #eef1f5;
     --brand: #0f1c33;
     --brand-hover: #1b2c4f;
+    --btn: #0f1c33;
+    --btn-hover: #1b2c4f;
     --accent: #1a56db;
-    --green: #34c759;
-    --amber: #ff9f0a;
-    --red: #ff453a;
-    --green-text: #217a3c;
-    --amber-text: #9a6200;
-    --red-text: #c22218;
-    --na: #d3d8df;
-    --radius: 14px;
-    --shadow: 0 1px 2px rgba(16, 24, 40, .04);
-    --shadow-hover: 0 4px 14px rgba(16, 24, 40, .08);
+    --focus-ring: rgba(26,86,219,.12);
+    --header-bg: rgba(255,255,255,.82);
+    --tile-a: #0d1523;
+    --tile-b: #15213a;
+    --tile-border: rgba(255,255,255,.06);
+    --radius: 16px;
+    --shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 8px 24px rgba(16, 24, 40, .05);
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b0f17;
+    --card: #121826;
+    --band: #151c2c;
+    --field: #0e1420;
+    --hover: #1a2233;
+    --press: #1f2940;
+    --text: #e9edf5;
+    --muted: #a0a9ba;
+    --faint: #707a8c;
+    --hairline: #232c3e;
+    --hairline-soft: #1c2434;
+    --brand: #e9edf5;
+    --brand-hover: #ffffff;
+    --btn: #2e63e7;
+    --btn-hover: #3b74ff;
+    --accent: #5c8dff;
+    --focus-ring: rgba(92,141,255,.18);
+    --header-bg: rgba(13,18,29,.8);
+    --tile-a: #1a2440;
+    --tile-b: #253760;
+    --tile-border: rgba(255,255,255,.09);
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    color-scheme: dark;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -37,17 +80,25 @@
           "Inter", Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex; flex-direction: column;
+    -webkit-tap-highlight-color: transparent;
+    transition: background .25s ease, color .25s ease;
   }
+  button, select, input { touch-action: manipulation; }
 
-  /* ---------- header ---------- */
   header {
-    background: rgba(255,255,255,.82);
+    background: var(--header-bg);
     backdrop-filter: saturate(180%) blur(20px);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
     border-bottom: 1px solid var(--hairline-soft);
-    height: 58px; padding: 0 28px;
+    height: 58px;
+    padding: 0 calc(28px + env(safe-area-inset-right)) 0 calc(28px + env(safe-area-inset-left));
     display: flex; align-items: center; gap: 16px;
     position: sticky; top: 0; z-index: 10;
+    padding-top: env(safe-area-inset-top);
+    box-sizing: content-box;
   }
   .brand { display: flex; align-items: center; gap: 10px; }
   .brand .mark { width: 27px; height: 27px; flex: none; }
@@ -55,171 +106,39 @@
   .brand .name span { color: var(--accent); }
   header .divider { width: 1px; height: 20px; background: var(--hairline); }
   header .product { font-size: 13px; font-weight: 500; color: var(--muted); letter-spacing: -.1px; }
-  header .meta { margin-left: auto; color: var(--faint); font-size: 12px; letter-spacing: .1px; }
+  header .meta { margin-left: auto; color: var(--faint); font-size: 12px; }
+  #themeBtn {
+    margin-left: 12px; width: 36px; height: 36px; flex: none;
+    border: 1px solid var(--hairline); border-radius: 50%;
+    background: var(--card); color: var(--muted); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: border-color .15s ease, color .15s ease, background .15s ease;
+  }
+  #themeBtn:hover { color: var(--text); border-color: var(--faint); }
+  #themeBtn svg { width: 17px; height: 17px; }
 
-  main { max-width: 1160px; margin: 0 auto; padding: 28px 24px 72px; }
+  main { width: 100%; max-width: 880px; margin: 0 auto; padding: 40px 24px 56px; flex: 1; }
 
   .card {
     background: var(--card);
     border: 1px solid var(--hairline);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
-  }
-
-  .icon { width: 15px; height: 15px; flex: none; vertical-align: -3px; }
-  .icon.sm { width: 13px; height: 13px; vertical-align: -2px; }
-  .icon.GREEN { color: var(--green); }
-  .icon.ORANGE { color: var(--amber); }
-  .icon.RED { color: var(--red); }
-  .icon.NA { color: var(--na); }
-
-  /* ---------- toolbar ---------- */
-  .controls {
-    display: flex; flex-wrap: wrap; gap: 12px 14px; align-items: center;
-    padding: 16px 18px; margin-bottom: 12px;
-  }
-  .controls label { color: var(--faint); font-size: 12px; font-weight: 500; }
-  .controls input[type=text] {
-    flex: 1 1 320px; min-width: 220px;
-    background: var(--card); color: var(--text);
-    border: 1px solid var(--hairline); border-radius: 10px;
-    padding: 10px 13px; font-size: 14px;
-    transition: border-color .15s ease, box-shadow .15s ease;
-  }
-  .controls input[type=number] {
-    width: 70px; background: var(--card); color: var(--text);
-    border: 1px solid var(--hairline); border-radius: 10px; padding: 10px 10px;
-    font-size: 14px; font-variant-numeric: tabular-nums;
-    transition: border-color .15s ease, box-shadow .15s ease;
-  }
-  .controls select {
-    background: var(--card); color: var(--text);
-    border: 1px solid var(--hairline); border-radius: 10px; padding: 10px 10px;
-    font-size: 14px;
-  }
-  .controls input:focus, .controls select:focus {
-    outline: none; border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(26,86,219,.12);
-  }
-  .btn-primary {
-    background: var(--brand); border: 0; color: #fff; font-weight: 600;
-    border-radius: 10px; padding: 11px 24px; cursor: pointer; font-size: 13.5px;
-    letter-spacing: .1px;
-    transition: background .15s ease, transform .05s ease;
-  }
-  .btn-primary:hover { background: var(--brand-hover); }
-  .btn-primary:active { transform: scale(.985); }
-  .btn-primary:disabled { opacity: .45; cursor: wait; }
-  .btn-quiet {
-    background: var(--card); color: var(--brand);
-    border: 1px solid var(--hairline); font-weight: 600;
-    border-radius: 10px; padding: 10px 18px; cursor: pointer; font-size: 13px;
-    transition: border-color .15s ease, background .15s ease;
-  }
-  .btn-quiet:hover { border-color: #c9d2de; background: #fafbfc; }
-  .controls a { color: var(--accent); text-decoration: none; }
-  .snapshot-note { color: var(--faint); font-size: 12px; }
-
-  .searchRow { padding: 12px 18px; gap: 10px; }
-  .searchRow .searchIcon { color: var(--faint); }
-  .searchRow input[type=text] { flex: 1 1 280px; min-width: 200px; }
-  .searchRow .hint { color: var(--faint); font-size: 11.5px; }
-
-  /* ---------- legend ---------- */
-  .legend {
-    display: flex; gap: 24px; flex-wrap: wrap;
-    margin: 14px 6px 18px; color: var(--muted); font-size: 12.5px;
-  }
-  .legend b { color: var(--text); font-weight: 600; }
-
-  /* ---------- chips ---------- */
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-  .chip {
-    background: var(--card); border: 1px solid var(--hairline);
-    border-radius: 999px; padding: 8px 14px; cursor: pointer;
-    font-size: 12.5px; color: var(--muted);
-    display: inline-flex; align-items: center; gap: 8px;
-    transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease;
-  }
-  .chip:hover { border-color: #cfd6df; box-shadow: var(--shadow-hover); }
-  .chip:active { transform: scale(.98); }
-  .chip .sym { font-weight: 700; color: var(--text); letter-spacing: .2px; }
-  .chip .pct { font-weight: 700; font-variant-numeric: tabular-nums; }
-  .chip.GREEN .pct { color: var(--green-text); }
-  .chip.ORANGE .pct { color: var(--amber-text); }
-  .chip.RED .pct { color: var(--red-text); }
-  .chip.ERR { cursor: default; color: var(--faint); }
-
-  .statusMsg { color: var(--muted); margin: 10px 6px 14px; font-size: 13px; }
-
-  /* ---------- table ---------- */
-  .tableWrap { overflow-x: auto; overflow-y: hidden; }
-  table { width: 100%; border-collapse: collapse; min-width: 900px; }
-  thead th {
-    text-align: right; font-size: 10.5px; font-weight: 600;
-    text-transform: uppercase; letter-spacing: .8px;
-    color: var(--faint); padding: 13px 16px;
-    border-bottom: 1px solid var(--hairline);
-    background: #fbfcfd;
-    cursor: pointer; user-select: none; white-space: nowrap;
-  }
-  thead th:hover { color: var(--muted); }
-  thead th:first-child, thead th:nth-child(2) { text-align: left; }
-  tbody td {
-    padding: 12px 16px; text-align: right;
-    border-bottom: 1px solid var(--hairline-soft);
-    font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 13.5px;
-  }
-  tbody tr:last-child td { border-bottom: 0; }
-  tbody td:first-child, tbody td:nth-child(2) { text-align: left; }
-  tbody tr { cursor: pointer; transition: background .12s ease; }
-  tbody tr:hover { background: #f7f9fb; }
-  tbody tr.selected { background: #eef4ff; }
-  .sym-cell { font-weight: 700; letter-spacing: .2px; }
-  .status { font-weight: 600; display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; }
-  .status.GREEN { color: var(--green-text); }
-  .status.ORANGE { color: var(--amber-text); }
-  .status.RED { color: var(--red-text); }
-  .err-row td { color: var(--faint); font-style: italic; }
-
-  .meter {
-    display: inline-block; width: 84px; height: 4px; border-radius: 4px;
-    background: var(--hairline-soft); vertical-align: 2px; margin-left: 10px;
     overflow: hidden;
   }
-  .meter i { display: block; height: 100%; border-radius: 4px; transition: width .3s ease; }
 
-  /* ---------- chart ---------- */
-  #chartPanel { margin-top: 16px; padding: 20px 22px 12px; display: none; }
-  #chartPanel h2 { margin: 0 0 4px; font-size: 16px; font-weight: 700; letter-spacing: -.25px; }
-  .chartLabel {
-    display: inline-flex; align-items: center; gap: 7px;
-    font-size: 12.5px; font-weight: 600;
-    border-radius: 999px; padding: 6px 13px; margin: 6px 0 10px;
-    background: var(--bg); color: var(--muted);
-    font-variant-numeric: tabular-nums;
-    border: 1px solid var(--hairline-soft);
-  }
-  .chartLabel.GREEN { background: #f0faf3; color: var(--green-text); border-color: #d6eedd; }
-  .chartLabel.ORANGE { background: #fdf6ec; color: var(--amber-text); border-color: #f3e5ca; }
-  .chartLabel.RED { background: #fdf1f0; color: var(--red-text); border-color: #f6d7d4; }
-  #chartMeta { color: var(--muted); font-size: 12.5px; margin-bottom: 8px; }
-  #chartMeta b { color: var(--text); font-weight: 600; }
-  svg.plot text { fill: var(--faint); font-size: 10.5px;
-                  font-family: "SF Mono", "Menlo", "Consolas", monospace; }
-
-  /* ---------- SAR Risk Management Calculator ---------- */
-  #calcPanel { margin-top: 16px; padding: 0; overflow: hidden; }
   .sarTitle {
-    background: #fbfcfd; padding: 15px 24px;
+    background: var(--band); padding: 18px 28px;
     border-bottom: 1px solid var(--hairline);
     display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
   }
-  .sarTitle h2 { margin: 0; font-weight: 700; font-size: 16px; letter-spacing: -.25px; color: var(--text); }
-  .sarTitle .sub { color: var(--faint); font-size: 12px; }
-  .sarGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; padding: 20px 24px; }
+  .sarTitle h1 { margin: 0; font-weight: 700; font-size: 18px; letter-spacing: -.3px; color: var(--text); }
+  .sarTitle .sub { color: var(--faint); font-size: 12.5px; }
+
+  .sarGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; padding: 26px 28px; }
   @media (max-width: 720px) { .sarGrid { grid-template-columns: 1fr; } }
-  .sarCol { display: flex; flex-direction: column; gap: 14px; }
+  .sarCol { display: flex; flex-direction: column; gap: 16px; }
+
   .sar-el .sarLabel {
     font-weight: 600; font-size: 12px; color: var(--muted); line-height: 1;
     display: flex; align-items: center; gap: 6px; margin-bottom: 7px;
@@ -233,59 +152,88 @@
   .sarField { display: flex; align-items: center; gap: 7px; }
   .sarField .prefix { font-weight: 500; font-size: 13px; color: var(--faint); }
   .sarField input, .sarField select {
-    width: 100%; min-width: 0; font-size: 14px; color: var(--text); background: var(--card);
-    border: 1px solid var(--hairline); border-radius: 10px; padding: 10px 12px;
+    width: 100%; min-width: 0; font-size: 14.5px; color: var(--text); background: var(--field);
+    border: 1px solid var(--hairline); border-radius: 10px; padding: 11px 13px;
     font-family: inherit; font-variant-numeric: tabular-nums;
-    transition: border-color .15s ease, box-shadow .15s ease;
+    transition: border-color .15s ease, box-shadow .15s ease, background .25s ease;
   }
   .sarField input:focus, .sarField select:focus {
     outline: none; border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(26,86,219,.12);
+    box-shadow: 0 0 0 3px var(--focus-ring);
   }
   .sarStep {
-    flex: none; width: 34px; height: 38px; cursor: pointer; user-select: none;
-    border: 1px solid var(--hairline); border-radius: 10px; background: var(--card);
+    flex: none; width: 36px; height: 41px; cursor: pointer; user-select: none;
+    border: 1px solid var(--hairline); border-radius: 10px; background: var(--field);
     color: var(--muted); font-weight: 600; font-size: 16px; line-height: 1; font-family: inherit;
-    transition: border-color .15s ease, background .15s ease;
+    transition: border-color .15s ease, background .15s ease, color .15s ease;
   }
-  .sarStep:hover { background: #fafbfc; border-color: #c9d2de; color: var(--text); }
+  .sarStep:hover { background: var(--hover); border-color: var(--faint); color: var(--text); }
+  .sarStep:active { background: var(--press); }
+
+  /* Result tiles — graphite, restrained, executive */
   .sar-formula {
-    background: var(--brand); border-radius: 12px; padding: 16px 18px;
-    display: flex; flex-direction: column; justify-content: center; gap: 7px;
+    position: relative;
+    background: linear-gradient(140deg, var(--tile-a) 0%, var(--tile-b) 100%);
+    border: 1px solid var(--tile-border);
+    border-radius: 14px;
+    padding: 22px 24px 20px;
+    display: flex; flex-direction: column; gap: 10px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .sar-formula::after {
+    content: ""; position: absolute; left: 24px; right: 24px; top: 0;
+    height: 2px; border-radius: 0 0 2px 2px;
+    background: linear-gradient(90deg, rgba(96,165,250,.65), rgba(96,165,250,0));
   }
   .sar-formula .sarFormulaLabel {
-    font-weight: 600; font-size: 12px; color: rgba(255,255,255,.68); line-height: 1.2;
+    font-weight: 600; font-size: 11px; letter-spacing: 1.1px; text-transform: uppercase;
+    color: rgba(255,255,255,.52); line-height: 1.3;
   }
   .sar-formula .sarResult {
-    font-weight: 700; font-size: 30px; color: #fff; line-height: 1;
-    font-variant-numeric: tabular-nums; letter-spacing: -.5px;
+    font-weight: 700; font-size: 38px; color: #fff; line-height: 1;
+    font-variant-numeric: tabular-nums; letter-spacing: -1px;
   }
+  .sar-formula .sarSub {
+    font-size: 12px; color: rgba(255,255,255,.40);
+    font-variant-numeric: tabular-nums;
+  }
+
   .sarInfoBar {
-    padding: 15px 24px 18px; border-top: 1px solid var(--hairline-soft);
+    padding: 18px 28px 22px; border-top: 1px solid var(--hairline-soft);
     display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
   }
   .sarInfoBar .sarRef { font-weight: 600; font-size: 13px; color: var(--text); }
   .sarSheetBtn {
-    display: inline-block; background: var(--brand);
+    display: inline-block; background: var(--btn);
     border-radius: 10px; color: #fff !important; font-weight: 600; font-size: 13px;
-    padding: 11px 20px; text-align: center; text-decoration: none; font-family: inherit;
+    padding: 12px 22px; text-align: center; text-decoration: none; font-family: inherit;
     letter-spacing: .2px; transition: background .15s ease;
   }
-  .sarSheetBtn:hover { background: var(--brand-hover); }
+  .sarSheetBtn:hover { background: var(--btn-hover); }
   .sarNote { color: var(--faint); font-size: 11.5px; margin-left: auto; }
 
-  /* ---------- footer ---------- */
   footer {
-    border-top: 1px solid var(--hairline);
-    color: var(--faint); font-size: 11.5px; margin-top: 40px;
-    padding-top: 20px; text-align: center; line-height: 1.9;
+    color: var(--faint); font-size: 11.5px; text-align: center;
+    padding: 18px 24px calc(26px + env(safe-area-inset-bottom)); line-height: 1.8;
   }
-  footer a { color: var(--accent); text-decoration: none; }
 
+  /* iPhone-class screens: bigger touch targets, no zoom-on-focus (16px), safe areas */
   @media (max-width: 640px) {
-    main { padding: 16px 12px 48px; }
-    header { padding: 0 16px; }
+    main { padding: 20px 14px 40px; }
+    header {
+      padding-left: calc(16px + env(safe-area-inset-left));
+      padding-right: calc(16px + env(safe-area-inset-right));
+    }
     header .product, header .meta { display: none; }
+    #themeBtn { margin-left: auto; }
+    .sarGrid { gap: 20px; padding: 20px 16px; }
+    .sarInfoBar { padding: 16px 16px 20px; }
+    .sarTitle { padding: 16px 16px; }
+    .sarField input, .sarField select { font-size: 16px; padding: 12px 13px; }
+    .sarStep { width: 44px; height: 47px; font-size: 18px; }
+    .sarSheetBtn { width: 100%; padding: 14px 22px; }
+    .sarNote { margin-left: 0; }
+    .sar-formula .sarResult { font-size: 34px; }
   }
 </style>
 </head>
@@ -293,25 +241,15 @@
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
-    <symbol id="i-ok" viewBox="0 0 20 20">
-      <circle cx="10" cy="10" r="8.5" fill="currentColor"/>
-      <path d="M6.4 10.3l2.3 2.3 4.6-4.9" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <symbol id="i-sun" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="3.6" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+        <path d="M10 2.2v1.9M10 15.9v1.9M2.2 10h1.9M15.9 10h1.9M4.5 4.5l1.35 1.35M14.15 14.15l1.35 1.35M15.5 4.5l-1.35 1.35M5.85 14.15L4.5 15.5"/>
+      </g>
     </symbol>
-    <symbol id="i-warn" viewBox="0 0 20 20">
-      <circle cx="10" cy="10" r="8.5" fill="currentColor"/>
-      <path d="M10 5.6v5.2" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
-      <circle cx="10" cy="13.9" r="1.15" fill="#fff"/>
-    </symbol>
-    <symbol id="i-stop" viewBox="0 0 20 20">
-      <circle cx="10" cy="10" r="8.5" fill="currentColor"/>
-      <path d="M6.6 10h6.8" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
-    </symbol>
-    <symbol id="i-na" viewBox="0 0 20 20">
-      <circle cx="10" cy="10" r="7.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.5 2.8"/>
-    </symbol>
-    <symbol id="i-search" viewBox="0 0 20 20">
-      <circle cx="8.8" cy="8.8" r="5.6" fill="none" stroke="currentColor" stroke-width="1.7"/>
-      <path d="M13.2 13.2l3.6 3.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+    <symbol id="i-moon" viewBox="0 0 20 20">
+      <path d="M16.7 12.3a7 7 0 0 1-9-9 7.3 7.3 0 1 0 9 9z"
+            fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
     </symbol>
     <symbol id="i-mark" viewBox="0 0 32 32">
       <rect width="32" height="32" rx="7" fill="#0f1c33"/>
@@ -331,90 +269,17 @@
     <span class="name">Jaden<span>TradeBot</span></span>
   </div>
   <span class="divider"></span>
-  <span class="product">DTR vs ATR Stock Identifier</span>
-  <span class="meta">Daily-range analytics · v{{ version }}</span>
+  <span class="product">SAR Risk Management Calculator</span>
+  <span class="meta">v{{ version }}</span>
+  <button id="themeBtn" type="button" aria-label="Toggle dark mode">
+    <svg aria-hidden="true"><use id="themeIcon" href="#i-moon"/></svg>
+  </button>
 </header>
 
 <main>
-  {% if static_data %}
-  <div class="controls card" style="justify-content:space-between">
-    <span>Static snapshot · generated <b>{{ static_data.generated_at }}</b> ·
-      source <b>{{ static_data.params.source }}</b> · ATR length <b>{{ static_data.params.atr_length }}</b></span>
-    <span class="snapshot-note">Refreshed automatically by GitHub Actions · raw data: <a href="data/scan.json">scan.json</a></span>
-  </div>
-  {% else %}
-  <div class="controls card">
-    <label>Watchlist</label>
-    <input id="tickers" type="text" value="{{ watchlist }}" spellcheck="false"
-           placeholder="Comma-separated tickers, e.g. AAPL, TSLA, NVDA">
-    <label>ATR length</label>
-    <input id="atrLength" type="number" min="1" max="200" value="{{ atr_length }}">
-    <label>Source</label>
-    <select id="source">
-      <option value="auto"{% if source == 'auto' %} selected{% endif %}>auto (live)</option>
-      <option value="yfinance"{% if source == 'yfinance' %} selected{% endif %}>yfinance</option>
-      <option value="stooq"{% if source == 'stooq' %} selected{% endif %}>stooq</option>
-      <option value="offline"{% if source == 'offline' %} selected{% endif %}>offline demo</option>
-    </select>
-    <button id="scanBtn" class="btn-primary">Run scan</button>
-  </div>
-  {% endif %}
-
-  <div class="searchRow controls card">
-    <svg class="icon searchIcon" aria-hidden="true"><use href="#i-search"/></svg>
-    {% if static_data %}
-    <input id="search" type="text" spellcheck="false" autocomplete="off"
-           placeholder="Filter this snapshot — type a ticker, e.g. NVDA">
-    <span class="hint">Live search runs on the interactive app</span>
-    {% else %}
-    <input id="search" type="text" list="symlist" spellcheck="false" autocomplete="off"
-           placeholder="Search any stock — ticker or company name, e.g. PLTR or Palantir">
-    <button id="addBtn" type="button" class="btn-quiet">Add to scan</button>
-    <span class="hint">Enter adds it to the watchlist and rescans</span>
-    <datalist id="symlist"></datalist>
-    {% endif %}
-  </div>
-
-  <div class="legend">
-    <span><svg class="icon sm GREEN"><use href="#i-ok"/></svg> <b>Room to move</b> — ≤ 70% of ATR used</span>
-    <span><svg class="icon sm ORANGE"><use href="#i-warn"/></svg> <b>Extended</b> — 70–90% of ATR used</span>
-    <span><svg class="icon sm RED"><use href="#i-stop"/></svg> <b>Exhausted</b> — ≥ 90% of ATR used</span>
-  </div>
-
-  <div id="chips" class="chips"></div>
-  <div id="status" class="statusMsg">{% if not static_data %}Press <b>Run scan</b> to evaluate the watchlist.{% endif %}</div>
-
-  <div class="card tableWrap" id="results" style="display:none">
-  <table>
-    <thead>
-      <tr>
-        <th data-k="symbol">Symbol</th>
-        <th data-k="status">Status</th>
-        <th data-k="dtr_pct">DTR% of ATR</th>
-        <th data-k="dtr">DTR $</th>
-        <th data-k="atr">ATR</th>
-        <th data-k="range_left">Range Left $</th>
-        <th data-k="range_left_pct">Range Left %</th>
-        <th data-k="last_close">Close</th>
-        <th data-k="today_low">Day Low</th>
-        <th data-k="today_high">Day High</th>
-        <th data-k="atr_buy_target">Low + ATR</th>
-      </tr>
-    </thead>
-    <tbody id="tbody"></tbody>
-  </table>
-  </div>
-
-  <div id="chartPanel" class="card">
-    <h2 id="chartTitle"></h2>
-    <div id="chartStudyLabel" class="chartLabel"></div>
-    <div id="chartMeta"></div>
-    <div id="chart"></div>
-  </div>
-
   <div id="calcPanel" class="card">
     <div class="sarTitle">
-      <h2>SAR Risk Management Calculator</h2>
+      <h1>SAR Risk Management Calculator</h1>
       <span class="sub">Size share and option positions by the % of your account you risk</span>
     </div>
     <div class="sarGrid">
@@ -465,18 +330,20 @@
         <div class="sar-el">
           <div class="sarLabel">Prefill From Scan (optional)</div>
           <div class="sarField">
-            <select id="cSymbol"><option value="">— pick a scanned symbol —</option></select>
+            <select id="cSymbol"><option value="">— pick a symbol —</option></select>
           </div>
         </div>
       </div>
       <div class="sarCol">
         <div class="sar-formula">
-          <div class="sarFormulaLabel" id="rSharesLabel">Shares to Buy, Risking 1%</div>
+          <div class="sarFormulaLabel" id="rSharesLabel">Shares to Buy · Risking 1%</div>
           <div class="sarResult" id="rShares">—</div>
+          <div class="sarSub" id="rSharesSub">Enter an entry and stop price</div>
         </div>
         <div class="sar-formula">
-          <div class="sarFormulaLabel" id="rOptionsLabel">Options to Buy, Risking 1%</div>
+          <div class="sarFormulaLabel" id="rOptionsLabel">Options to Buy · Risking 1%</div>
           <div class="sarResult" id="rOptions">—</div>
+          <div class="sarSub" id="rOptionsSub">Enter an option value</div>
         </div>
       </div>
     </div>
@@ -487,340 +354,20 @@
       <span class="sarNote">Shares = account × risk ÷ (entry − stop) · Options = account × risk ÷ (premium × 100)</span>
     </div>
   </div>
-
-  <footer>
-    DTR = today’s high − low · ATR = Wilder’s average of daily True Range ·
-    DTR% = share of the average daily range already used today.<br>
-    Indicator credit: “Custom ATR Plot” by 7of9, shared on
-    <a href="https://usethinkscript.com/threads/dtr-vs-atr-indicator-for-thinkorswim.387/">usethinkscript.com</a>.
-    For research and education only — not investment advice.
-  </footer>
 </main>
+
+<footer>For research and education only — not investment advice.</footer>
 
 {% if static_data %}<script>window.STATIC_DATA = {{ static_data | tojson }};</script>{% endif %}
 <script>
 "use strict";
 const STATIC = window.STATIC_DATA || null;
-const COLORS = { GREEN: "#34c759", ORANGE: "#ff9f0a", RED: "#ff453a", NA: "#d3d8df" };
-const CANDLE_UP = "#2eb15a", CANDLE_DOWN = "#e5484d";
-const STATUS_LABEL = { GREEN: "Room to move", ORANGE: "Extended", RED: "Exhausted" };
-const STATUS_ICON = { GREEN: "i-ok", ORANGE: "i-warn", RED: "i-stop", NA: "i-na" };
-let lastRows = [];
-let sortKey = null, sortDir = 1;
-let selectedSymbol = null;
-let filterText = "";
-let directory = [];   // [{symbol, name}] for search suggestions (live mode)
+let scanRows = [];   // ok rows used by the optional prefill dropdown
 
 const $ = (id) => document.getElementById(id);
-let baseStatus = "";
-const setStatus = (t) => { baseStatus = t; $("status").textContent = t; };
 const fmt = (v, d = 2) => (v === null || v === undefined || Number.isNaN(v)) ? "—" : Number(v).toFixed(d);
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g,
-  (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const iconFor = (status, extra = "") =>
-  `<svg class="icon ${extra} ${esc(status)}" aria-hidden="true"><use href="#${STATUS_ICON[status] || "i-na"}"/></svg>`;
-
-function params() {
-  return {
-    tickers: $("tickers").value,
-    atr_length: $("atrLength").value,
-    source: $("source").value,
-  };
-}
-
-async function runScan() {
-  if (STATIC) {
-    lastRows = STATIC.rows;
-    const ok = lastRows.filter(r => r.ok);
-    setStatus(
-      `Snapshot of ${lastRows.length} symbol${lastRows.length === 1 ? "" : "s"}` +
-      (ok.length ? ` · data date ${ok[0].date}` : "") +
-      ` · generated ${STATIC.generated_at}`);
-    render();
-    return;
-  }
-  const btn = $("scanBtn");
-  btn.disabled = true;
-  setStatus("Scanning…");
-  try {
-    const p = params();
-    const qs = new URLSearchParams({ tickers: p.tickers, atr_length: p.atr_length, source: p.source });
-    const resp = await fetch("api/scan?" + qs.toString());
-    if (!resp.ok) throw new Error("HTTP " + resp.status);
-    const data = await resp.json();
-    lastRows = data.rows;
-    const ok = lastRows.filter(r => r.ok).length;
-    const failed = lastRows.length - ok;
-    setStatus(
-      `Scanned ${lastRows.length} symbol${lastRows.length === 1 ? "" : "s"}` +
-      (failed ? ` — ${failed} failed (see table)` : "") +
-      (lastRows.find(r => r.ok) ? ` · data date ${lastRows.find(r => r.ok).date}` : ""));
-    render();
-  } catch (err) {
-    setStatus("Scan failed: " + err.message);
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-function sortedRows() {
-  const rows = [...lastRows];
-  if (!sortKey) return rows;
-  rows.sort((a, b) => {
-    if (!a.ok && !b.ok) return 0;
-    if (!a.ok) return 1;
-    if (!b.ok) return -1;
-    const av = a[sortKey], bv = b[sortKey];
-    if (typeof av === "string") return sortDir * String(av).localeCompare(String(bv));
-    return sortDir * ((av ?? -Infinity) - (bv ?? -Infinity));
-  });
-  return rows;
-}
-
-function matchesFilter(r) {
-  const q = filterText.trim().toUpperCase();
-  if (!q) return true;
-  if (r.symbol.includes(q)) return true;
-  const entry = directory.find(d => d.symbol === r.symbol);
-  return !!(entry && entry.name.toUpperCase().includes(q));
-}
-
-function render() {
-  const visible = lastRows.filter(matchesFilter);
-  const chips = $("chips");
-  chips.innerHTML = "";
-  for (const r of visible) {
-    const div = document.createElement("div");
-    if (r.ok) {
-      div.className = "chip " + esc(r.status);
-      div.innerHTML =
-        iconFor(r.status, "sm") +
-        `<span class="sym">${esc(r.symbol)}</span>` +
-        `<span>DTR ${fmt(r.dtr)} vs ATR ${fmt(r.atr)}</span>` +
-        `<span class="pct">${fmt(r.dtr_pct, 0)}%</span>`;
-      div.title = r.label + " — " + r.meaning;
-      div.onclick = () => showChart(r.symbol);
-    } else {
-      div.className = "chip ERR";
-      div.textContent = `${r.symbol}: no data`;
-      div.title = r.error || "";
-    }
-    chips.appendChild(div);
-  }
-
-  const tbody = $("tbody");
-  tbody.innerHTML = "";
-  for (const r of sortedRows().filter(matchesFilter)) {
-    const tr = document.createElement("tr");
-    if (!r.ok) {
-      tr.className = "err-row";
-      tr.innerHTML = `<td class="sym-cell">${esc(r.symbol)}</td><td colspan="10">${esc(r.error || "no data")}</td>`;
-      tbody.appendChild(tr);
-      continue;
-    }
-    if (r.symbol === selectedSymbol) tr.className = "selected";
-    const meterColor = COLORS[r.status] || COLORS.NA;
-    const meterW = Math.max(0, Math.min(100, r.dtr_pct));
-    tr.innerHTML = `
-      <td class="sym-cell">${esc(r.symbol)}</td>
-      <td><span class="status ${esc(r.status)}">${iconFor(r.status, "sm")}${esc(STATUS_LABEL[r.status] || r.status)}</span></td>
-      <td>${fmt(r.dtr_pct, 0)}%<span class="meter"><i style="width:${meterW}%;background:${meterColor}"></i></span></td>
-      <td>${fmt(r.dtr)}</td>
-      <td>${fmt(r.atr)}</td>
-      <td>${fmt(r.range_left)}</td>
-      <td>${fmt(r.range_left_pct, 0)}%</td>
-      <td>${fmt(r.last_close)}</td>
-      <td>${fmt(r.today_low)}</td>
-      <td>${fmt(r.today_high)}</td>
-      <td>${fmt(r.atr_buy_target)}</td>`;
-    tr.onclick = () => showChart(r.symbol);
-    tbody.appendChild(tr);
-  }
-  $("results").style.display = lastRows.length ? "" : "none";
-  calcSymbolOptions();
-  const q = filterText.trim();
-  if (q && lastRows.length) {
-    $("status").textContent = visible.length
-      ? `Showing ${visible.length} of ${lastRows.length} symbols matching “${q}”`
-      : (STATIC
-          ? `No symbol in this snapshot matches “${q}”.`
-          : `No scanned symbol matches “${q}” — press Enter or “Add to scan” to fetch it live.`);
-  } else {
-    $("status").textContent = baseStatus;
-  }
-}
-
-// ---- live search -----------------------------------------------------------
-
-async function loadDirectory() {
-  try {
-    const resp = await fetch("api/symbols");
-    if (!resp.ok) return;
-    directory = await resp.json();
-    const dl = $("symlist");
-    if (!dl) return;
-    for (const d of directory) {
-      const opt = document.createElement("option");
-      opt.value = d.symbol;
-      opt.label = d.name;
-      dl.appendChild(opt);
-    }
-  } catch (e) { /* suggestions are optional */ }
-}
-
-function resolveSymbol(raw) {
-  const q = raw.trim();
-  if (!q) return "";
-  const upper = q.toUpperCase();
-  if (directory.some(d => d.symbol === upper)) return upper;
-  const byName = directory.find(d => d.name.toUpperCase().includes(upper));
-  if (byName && !/^[A-Z0-9.^=-]{1,6}$/.test(upper)) return byName.symbol;
-  return upper.replace(/[^A-Z0-9.^=-]/g, "");
-}
-
-function addSymbol() {
-  const sym = resolveSymbol($("search").value);
-  if (!sym) return;
-  const input = $("tickers");
-  const current = input.value.split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
-  if (!current.includes(sym)) current.push(sym);
-  input.value = current.join(",");
-  $("search").value = "";
-  filterText = "";
-  selectedSymbol = sym;
-  runScan().then(() => {
-    const row = lastRows.find(r => r.symbol === sym && r.ok);
-    if (row) showChart(sym);
-  });
-}
-
-// ---- chart -----------------------------------------------------------------
-
-function applyChart(data) {
-  const lbl = $("chartStudyLabel");
-  lbl.className = "chartLabel " + (data.status || "");
-  lbl.innerHTML = iconFor(data.status, "sm") + esc(data.label);
-  $("chartMeta").innerHTML =
-    `${esc(data.meaning)}. Range left today: <b>$${fmt(data.range_left)}</b> (${fmt(data.range_left_pct,0)}% of ATR) · ` +
-    `ATR upside target from day low: <b>$${fmt(data.atr_buy_target)}</b> · ` +
-    `ATR downside target from day high: <b>$${fmt(data.atr_sell_target)}</b>`;
-  drawChart(data.bars);
-  $("chartPanel").scrollIntoView({ behavior: "smooth", block: "nearest" });
-}
-
-let chartReq = 0;
-async function showChart(symbol) {
-  selectedSymbol = symbol;
-  const req = ++chartReq;   // drop stale responses if the user clicks fast
-  render();
-  const panel = $("chartPanel");
-  panel.style.display = "block";
-  $("chartTitle").textContent = symbol + " — daily";
-  const lbl = $("chartStudyLabel");
-  lbl.className = "chartLabel";
-  lbl.textContent = "loading…";
-  $("chart").innerHTML = "";
-  $("chartMeta").textContent = "";
-  if (STATIC) {
-    const data = STATIC.charts && STATIC.charts[symbol];
-    if (data) applyChart(data);
-    else lbl.textContent = "chart unavailable in this snapshot";
-    return;
-  }
-  const p = params();
-  const qs = new URLSearchParams({ atr_length: p.atr_length, source: p.source });
-  try {
-    const resp = await fetch(`api/chart/${encodeURIComponent(symbol)}?` + qs.toString());
-    const data = await resp.json();
-    if (req !== chartReq) return;
-    if (!resp.ok || !data.ok) throw new Error(data.error || ("HTTP " + resp.status));
-    applyChart(data);
-  } catch (err) {
-    if (req === chartReq) lbl.textContent = "chart unavailable: " + err.message;
-  }
-}
-
-function drawChart(bars) {
-  const W = Math.min(1180, Math.max(680, $("chart").clientWidth || 900));
-  const H = 360, padL = 8, padR = 64, padT = 14, padB = 26;
-  const plotW = W - padL - padR, plotH = H - padT - padB;
-  const n = bars.length;
-  if (!n) return;
-
-  let lo = Infinity, hi = -Infinity;
-  for (const b of bars) { lo = Math.min(lo, b.low); hi = Math.max(hi, b.high); }
-  const span = (hi - lo) || 1;
-  lo -= span * 0.04; hi += span * 0.04;
-  const y = (v) => padT + plotH * (1 - (v - lo) / (hi - lo));
-  const step = plotW / n;
-  const cw = Math.max(2, Math.min(11, step * 0.6));
-
-  const svgNS = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(svgNS, "svg");
-  svg.setAttribute("width", "100%");
-  svg.setAttribute("class", "plot");
-  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-
-  for (let i = 0; i <= 4; i++) {
-    const v = lo + (hi - lo) * i / 4;
-    const gy = y(v);
-    const line = document.createElementNS(svgNS, "line");
-    line.setAttribute("x1", padL); line.setAttribute("x2", W - padR);
-    line.setAttribute("y1", gy); line.setAttribute("y2", gy);
-    line.setAttribute("stroke", "#f0f2f5"); line.setAttribute("stroke-width", "1");
-    svg.appendChild(line);
-    const t = document.createElementNS(svgNS, "text");
-    t.setAttribute("x", W - padR + 6); t.setAttribute("y", gy + 3.5);
-    t.textContent = v.toFixed(2);
-    svg.appendChild(t);
-  }
-
-  bars.forEach((b, i) => {
-    const cx = padL + step * (i + 0.5);
-    const up = (b.close ?? 0) >= (b.open ?? b.close ?? 0);
-    const color = up ? CANDLE_UP : CANDLE_DOWN;
-    const wick = document.createElementNS(svgNS, "line");
-    wick.setAttribute("x1", cx); wick.setAttribute("x2", cx);
-    wick.setAttribute("y1", y(b.high)); wick.setAttribute("y2", y(b.low));
-    wick.setAttribute("stroke", color); wick.setAttribute("stroke-width", "1");
-    svg.appendChild(wick);
-    const o = b.open ?? b.close, c = b.close;
-    const rect = document.createElementNS(svgNS, "rect");
-    const top = Math.min(y(o), y(c));
-    rect.setAttribute("x", cx - cw / 2);
-    rect.setAttribute("y", top);
-    rect.setAttribute("width", cw);
-    rect.setAttribute("height", Math.max(1, Math.abs(y(o) - y(c))));
-    rect.setAttribute("fill", color);
-    const title = document.createElementNS(svgNS, "title");
-    title.textContent =
-      `${b.date}  O ${fmt(b.open)} H ${fmt(b.high)} L ${fmt(b.low)} C ${fmt(b.close)}\n` +
-      `DTR ${fmt(b.dtr)} vs ATR ${fmt(b.atr)} — ${fmt(b.dtr_pct, 0)}% (${b.status})`;
-    rect.appendChild(title);
-    svg.appendChild(rect);
-
-    const strip = document.createElementNS(svgNS, "rect");
-    strip.setAttribute("x", cx - cw / 2);
-    strip.setAttribute("y", H - padB + 6);
-    strip.setAttribute("width", cw);
-    strip.setAttribute("height", 4);
-    strip.setAttribute("rx", 2);
-    strip.setAttribute("fill", COLORS[b.status] || COLORS.NA);
-    strip.appendChild(title.cloneNode(true));
-    svg.appendChild(strip);
-
-    if (i % Math.ceil(n / 8) === 0) {
-      const t = document.createElementNS(svgNS, "text");
-      t.setAttribute("x", cx); t.setAttribute("y", H - padB + 22);
-      t.setAttribute("text-anchor", "middle");
-      t.textContent = b.date.slice(5);
-      svg.appendChild(t);
-    }
-  });
-
-  $("chart").innerHTML = "";
-  $("chart").appendChild(svg);
-}
+const money = (v) => "$" + Number(v).toLocaleString("en-US",
+  { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 // ---- SAR Risk Management Calculator ---------------------------------------
 // Shares to Buy, Risking r% = account × r% ÷ (entry − stop)
@@ -839,25 +386,41 @@ function sarRecalc() {
   const riskAmt = account * riskPct / 100;
   const pctLabel = riskPct === 0.5 ? "0.5%" : riskPct + "%";
 
-  $("rSharesLabel").textContent = `Shares to Buy, Risking ${pctLabel}`;
-  $("rOptionsLabel").textContent = `Options to Buy, Risking ${pctLabel}`;
+  $("rSharesLabel").textContent = `Shares to Buy · Risking ${pctLabel}`;
+  $("rOptionsLabel").textContent = `Options to Buy · Risking ${pctLabel}`;
 
   const perShare = entry - stop;
-  const shares = riskAmt > 0 && perShare > 0 ? Math.floor(riskAmt / perShare) : null;
-  $("rShares").textContent = shares === null ? "—" : shares.toLocaleString("en-US");
+  if (riskAmt > 0 && perShare > 0) {
+    const shares = Math.floor(riskAmt / perShare);
+    $("rShares").textContent = shares.toLocaleString("en-US");
+    $("rSharesSub").textContent =
+      `${money(riskAmt)} at risk · ${money(perShare)} per share`;
+  } else {
+    $("rShares").textContent = "—";
+    $("rSharesSub").textContent = riskAmt > 0
+      ? "Enter an entry price above your stop loss"
+      : "Enter your account size and risk percent";
+  }
 
   const perContract = option * 100;
-  const options = riskAmt > 0 && perContract > 0 ? Math.floor(riskAmt / perContract) : null;
-  $("rOptions").textContent = options === null ? "—" : options.toLocaleString("en-US");
+  if (riskAmt > 0 && perContract > 0) {
+    const options = Math.floor(riskAmt / perContract);
+    $("rOptions").textContent = options.toLocaleString("en-US");
+    $("rOptionsSub").textContent =
+      `${money(riskAmt)} at risk · ${money(perContract)} per contract`;
+  } else {
+    $("rOptions").textContent = "—";
+    $("rOptionsSub").textContent = riskAmt > 0
+      ? "Enter an option value"
+      : "Enter your account size and risk percent";
+  }
 }
 
-function calcSymbolOptions() {
+function populatePrefill() {
   const sel = $("cSymbol");
-  if (!sel) return;
   const keep = sel.value;
   while (sel.options.length > 1) sel.remove(1);
-  for (const r of lastRows) {
-    if (!r.ok) continue;
+  for (const r of scanRows) {
     const opt = document.createElement("option");
     opt.value = r.symbol;
     opt.textContent = `${r.symbol} — close ${fmt(r.last_close)}, ATR ${fmt(r.atr)}`;
@@ -866,8 +429,23 @@ function calcSymbolOptions() {
   if ([...sel.options].some(o => o.value === keep)) sel.value = keep;
 }
 
+async function loadPrefillData() {
+  if (STATIC) {
+    scanRows = (STATIC.rows || []).filter(r => r.ok);
+    populatePrefill();
+    return;
+  }
+  try {
+    const resp = await fetch("api/scan");
+    if (!resp.ok) return;
+    const data = await resp.json();
+    scanRows = (data.rows || []).filter(r => r.ok);
+    populatePrefill();
+  } catch (e) { /* prefill is optional */ }
+}
+
 function calcPrefill() {
-  const row = lastRows.find(r => r.ok && r.symbol === $("cSymbol").value);
+  const row = scanRows.find(r => r.symbol === $("cSymbol").value);
   if (!row) return;
   $("cEntry").value = row.last_close.toFixed(2);
   $("cStop").value = Math.max(row.last_close - 1.5 * row.atr, 0.01).toFixed(2);
@@ -889,35 +467,27 @@ document.querySelectorAll(".sarStep").forEach((btn) => {
   btn.addEventListener("click", () => {
     const input = $(btn.dataset.target);
     const step = parseFloat(btn.dataset.step);
-    const decimals = Math.abs(step) < 1 ? 2 : 2;
     const next = Math.max((parseFloat(input.value) || 0) + step, 0);
-    input.value = next.toFixed(decimals);
+    input.value = next.toFixed(2);
     sarRecalc();
   });
 });
-sarRecalc();
 
-// ---- wiring ----------------------------------------------------------------
+// ---- theme -----------------------------------------------------------------
 
-document.querySelectorAll("thead th").forEach((th) => {
-  th.onclick = () => {
-    const k = th.dataset.k;
-    sortDir = (sortKey === k) ? -sortDir : 1;
-    sortKey = k;
-    render();
-  };
-});
-$("search").addEventListener("input", () => { filterText = $("search").value; render(); });
-if (!STATIC) {
-  $("scanBtn").onclick = runScan;
-  $("tickers").addEventListener("keydown", (e) => { if (e.key === "Enter" && !$("scanBtn").disabled) runScan(); });
-  $("addBtn").onclick = addSymbol;
-  $("search").addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !$("scanBtn").disabled) { e.preventDefault(); addSymbol(); }
-  });
-  loadDirectory();
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  try { localStorage.setItem("jtb-theme", t); } catch (e) {}
+  document.getElementById("themeIcon").setAttribute("href", t === "dark" ? "#i-sun" : "#i-moon");
+  document.getElementById("themeColorMeta").setAttribute(
+    "content", t === "dark" ? "#0b0f17" : "#f5f5f7");
 }
-runScan();
+applyTheme(document.documentElement.dataset.theme || "light");
+$("themeBtn").addEventListener("click", () =>
+  applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
+
+sarRecalc();
+loadPrefillData();
 </script>
 </body>
 </html>

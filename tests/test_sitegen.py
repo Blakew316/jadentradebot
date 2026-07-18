@@ -12,11 +12,9 @@ class TestSitegen:
         data = build_site(out, symbols=["AAPL", "TSLA"], source="offline")
 
         html = (out / "index.html").read_text(encoding="utf-8")
-        assert "STATIC_DATA" in html
-        assert "Static snapshot" in html
+        assert "STATIC_DATA" in html         # embedded rows feed the prefill
+        assert "SAR Risk Management Calculator" in html
         assert "AAPL" in html
-        # No live-scan controls in a snapshot.
-        assert 'id="scanBtn"' not in html
         assert (out / ".nojekyll").exists()
 
         scan_json = json.loads((out / "data" / "scan.json").read_text())

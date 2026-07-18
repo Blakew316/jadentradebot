@@ -116,22 +116,24 @@ class TestDataCache:
         assert not data_mod._cache
 
 
-class TestSearchUi:
-    def test_dynamic_page_has_search_and_add(self):
+class TestCalculatorOnlySite:
+    """The site is now a single-purpose calculator page: no scan table,
+    search bar, chips, or chart — but the JSON API remains available."""
+
+    def test_dashboard_elements_removed(self):
         app = create_app(watchlist=["AAPL"], source="offline")
         html = app.test_client().get("/").get_data(as_text=True)
-        assert 'id="search"' in html
-        assert 'id="addBtn"' in html
-        assert 'id="symlist"' in html   # datalist for autocomplete
+        for gone in ('id="scanBtn"', 'id="search"', 'id="addBtn"',
+                     'id="tickers"', 'id="tbody"', 'id="chartPanel"'):
+            assert gone not in html
+        assert 'id="themeBtn"' in html   # dark-mode toggle
 
-    def test_static_page_has_filter_but_no_add(self, tmp_path):
-        from jadentradebot.sitegen import build_site
-
-        build_site(tmp_path / "s", symbols=["AAPL"], source="offline")
-        html = (tmp_path / "s" / "index.html").read_text()
-        assert 'id="search"' in html
-        assert 'id="addBtn"' not in html
-        assert 'id="scanBtn"' not in html
+    def test_api_still_available(self):
+        app = create_app(watchlist=["AAPL"], source="offline")
+        client = app.test_client()
+        assert client.get("/api/scan").status_code == 200
+        assert client.get("/api/symbols").status_code == 200
+        assert client.get("/healthz").status_code == 200
 
 
 class TestCalculator:
@@ -147,8 +149,8 @@ class TestCalculator:
             assert f'id="{el}"' in html
         # Elements of the original: risk options, labels, sheet link
         for text in ("0.5%", "Account Size $", "Entry Price", "Stop Loss Price",
-                     "Option Value", "Shares to Buy, Risking 1%",
-                     "Options to Buy, Risking 1%", "Reference to Spreadsheet",
+                     "Option Value", "Shares to Buy", "Options to Buy",
+                     "Risking 1%", "Reference to Spreadsheet",
                      "SAR RISK MANAGEMENT SHEET",
                      "sheet.zohopublic.com/sheet/published/"):
             assert text in html, text

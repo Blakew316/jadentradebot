@@ -63,25 +63,30 @@ range left), then ORANGE, then RED, with failed symbols last, and adds
 dashboard also include **ATR targets** projected from today's extremes
 (`low + ATR`, `high − ATR`).
 
-## Web dashboard
+## Web app — SAR Risk Management Calculator
 
 ```bash
-python -m jadentradebot web                 # live data, http://127.0.0.1:8000
-python -m jadentradebot web --source offline --port 8000   # demo mode
+python -m jadentradebot web                 # http://127.0.0.1:8000
+python -m jadentradebot web --source offline --port 8000   # demo data
 ```
 
-A dark, thinkorswim-styled dashboard — completely self-contained (no CDNs):
+The site is a single-purpose **SAR Risk Management Calculator** (modelled on
+the Calconic original): account size, risk dropdown (0.5% / 1% / 2%), entry,
+stop, and option value in — **shares to buy** and **options to buy** at that
+risk out, with the dollar risk and per-share/per-contract cost shown under
+each result. An optional dropdown prefills entry and an ATR-based stop from a
+live scan. Professional **light and dark modes** (toggle in the header,
+follows the system preference, persists), fully **iOS-friendly** (safe-area
+insets, 16px inputs so Safari doesn't zoom, 44px touch targets), and
+completely self-contained — no CDNs.
 
-- **Label chips** for every ticker, in the exact `DTR x vs ATR y  z%` format
-  and colour of the original `AddLabel`
-- **Scanner table** — sortable by any column, with a DTR% usage meter
-- **Daily candlestick chart** per symbol with a per-day DTR% status strip,
-  range-left readout, and ATR targets
+The scanner itself remains available through the CLI and the JSON API.
 
 ### JSON API
 
 - `GET /api/scan?tickers=AAPL,TSLA&atr_length=14&source=auto`
 - `GET /api/chart/AAPL?atr_length=14&source=auto`
+- `GET /api/symbols` · `GET /healthz`
 
 ## Python API
 

@@ -67,8 +67,7 @@ class TestWeb:
         resp = client.get("/")
         assert resp.status_code == 200
         html = resp.get_data(as_text=True)
-        assert "DTR vs ATR" in html
-        assert "AAPL,TSLA" in html
+        assert "SAR Risk Management Calculator" in html
 
     def test_api_scan(self, client):
         resp = client.get("/api/scan?tickers=AAPL,NVDA&source=offline")
