@@ -196,10 +196,6 @@
     font-weight: 700; font-size: 38px; color: #fff; line-height: 1;
     font-variant-numeric: tabular-nums; letter-spacing: -1px;
   }
-  .sar-formula .sarSub {
-    font-size: 12px; color: rgba(255,255,255,.40);
-    font-variant-numeric: tabular-nums;
-  }
 
   .sarInfoBar {
     padding: 16px 28px 20px; border-top: 1px solid var(--hairline-soft);
@@ -320,7 +316,6 @@
         <div class="sar-formula">
           <div class="sarFormulaLabel" id="rSharesLabel">Shares to Buy · Risking 1%</div>
           <div class="sarResult" id="rShares">—</div>
-          <div class="sarSub" id="rSharesSub">Enter an entry and stop price</div>
         </div>
       </div>
     </div>
@@ -335,8 +330,6 @@
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
-const money = (v) => "$" + Number(v).toLocaleString("en-US",
-  { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 // ---- Jaden's Risk Calculator ----------------------------------------------
 // Shares to Buy, Risking r% = account × r% ÷ (entry − stop)
@@ -357,15 +350,9 @@ function sarRecalc() {
 
   const perShare = entry - stop;
   if (riskAmt > 0 && perShare > 0) {
-    const shares = Math.floor(riskAmt / perShare);
-    $("rShares").textContent = shares.toLocaleString("en-US");
-    $("rSharesSub").textContent =
-      `${money(riskAmt)} at risk · ${money(perShare)} per share`;
+    $("rShares").textContent = Math.floor(riskAmt / perShare).toLocaleString("en-US");
   } else {
     $("rShares").textContent = "—";
-    $("rSharesSub").textContent = riskAmt > 0
-      ? "Enter an entry price above your stop loss"
-      : "Enter your account size and risk percent";
   }
 }
 
