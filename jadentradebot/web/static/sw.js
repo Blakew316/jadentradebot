@@ -3,7 +3,7 @@
    offline once installed. Bump CACHE on breaking asset changes. */
 "use strict";
 
-const CACHE = "jrc-v6";
+const CACHE = "jrc-v7";
 const SHELL = [
   "./",
   "manifest.webmanifest",
@@ -31,6 +31,10 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET" || new URL(req.url).origin !== self.location.origin) return;
+  // Let the browser stream the background video directly — Range requests
+  // and cache-first do not mix, and the poster image covers offline.
+  const path = new URL(req.url).pathname;
+  if (req.destination === "video" || path.endsWith("/bg.mp4") || path.endsWith("/bg.webm")) return;
 
   if (req.mode === "navigate") {
     // Navigations: freshest page when online, cached shell when offline.
@@ -51,7 +55,7 @@ self.addEventListener("fetch", (event) => {
       (hit) =>
         hit ||
         fetch(req).then((resp) => {
-          if (resp.ok) {
+          if (resp.status === 200) {   // never cache partial (206) responses
             const copy = resp.clone();
             caches.open(CACHE).then((cache) => cache.put(req, copy));
           }

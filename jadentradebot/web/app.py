@@ -190,6 +190,16 @@ def create_app(
     def background():
         return send_from_directory(app.static_folder, "bg.jpg", mimetype="image/jpeg")
 
+    @app.get("/bg.mp4")
+    def background_video():
+        # send_from_directory is conditional by default, so Range requests
+        # (required for smooth video streaming in Safari) are honoured.
+        return send_from_directory(app.static_folder, "bg.mp4", mimetype="video/mp4")
+
+    @app.get("/bg.webm")
+    def background_video_webm():
+        return send_from_directory(app.static_folder, "bg.webm", mimetype="video/webm")
+
     @app.get("/api/symbols")
     def api_symbols():
         return jsonify(json.loads(_SYMBOLS_FILE.read_text(encoding="utf-8")))

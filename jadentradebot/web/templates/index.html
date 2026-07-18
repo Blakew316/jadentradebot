@@ -76,9 +76,11 @@
   }
   /* ---------- animated reflective background ---------- */
   .bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: #0b1a36; }
-  .bg-img {
+  video.bg-img {
     position: absolute; inset: -7%;
-    background: url("bg.jpg") center / cover no-repeat;
+    width: 114%; height: 114%;
+    object-fit: cover;
+    background: url("bg.jpg") center / cover no-repeat;  /* poster/fallback */
     will-change: transform;
     transform: translate3d(0, 0, 0) scale(1.02);
   }
@@ -244,7 +246,11 @@
 <body>
 
 <div class="bg" aria-hidden="true">
-  <div class="bg-img" id="bgImg"></div>
+  <video class="bg-img" id="bgImg" autoplay muted loop playsinline
+         preload="auto" poster="bg.jpg">
+    <source src="bg.webm" type="video/webm">
+    <source src="bg.mp4" type="video/mp4">
+  </video>
 </div>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -432,6 +438,10 @@ sarRecalc();
     tx = (g / 30) * -MAX;
     ty = (b / 30) * -MAX;
   }
+
+  // iOS Low Power Mode blocks autoplay: retry on the first touch.
+  const kick = () => { if (img.paused) img.play().catch(() => {}); };
+  window.addEventListener("touchend", kick, { once: true, passive: true });
 
   if (typeof DeviceOrientationEvent !== "undefined") {
     if (typeof DeviceOrientationEvent.requestPermission === "function") {

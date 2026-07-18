@@ -51,6 +51,20 @@ class TestPwaEndpoints:
         assert resp.mimetype == "image/jpeg"
         assert resp.data.startswith(b"\xff\xd8\xff")  # JPEG magic
 
+    def test_background_video(self):
+        resp = client().get("/bg.mp4")
+        assert resp.status_code == 200
+        assert resp.mimetype == "video/mp4"
+        assert resp.data[4:8] == b"ftyp"  # MP4 container magic
+        # Range requests must work for Safari streaming
+        partial = client().get("/bg.mp4", headers={"Range": "bytes=0-99"})
+        assert partial.status_code == 206
+        assert len(partial.data) == 100
+        webm = client().get("/bg.webm")
+        assert webm.status_code == 200
+        assert webm.mimetype == "video/webm"
+        assert webm.data.startswith(b"\x1a\x45\xdf\xa3")  # EBML magic
+
     def test_template_wiring(self):
         html = client().get("/").get_data(as_text=True)
         assert 'rel="manifest"' in html
@@ -66,6 +80,8 @@ class TestPwaStaticBuild:
         assert (out / "manifest.webmanifest").exists()
         assert (out / "sw.js").exists()
         assert (out / "bg.jpg").read_bytes().startswith(b"\xff\xd8\xff")
+        assert (out / "bg.mp4").read_bytes()[4:8] == b"ftyp"
+        assert (out / "bg.webm").read_bytes().startswith(b"\x1a\x45\xdf\xa3")
         assert (out / "apple-touch-icon.png").read_bytes().startswith(PNG_MAGIC)
         for name in ("icon-180.png", "icon-192.png", "icon-512.png",
                      "icon-512-maskable.png"):
