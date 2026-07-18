@@ -61,6 +61,10 @@ jobs:
             done
           fi
           python -m jadentradebot sitegen "${args[@]}"
+      - name: Add CNAME for custom domain
+        run: cp CNAME _site/CNAME
+      - name: Add .nojekyll
+        run: touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
