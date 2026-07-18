@@ -89,8 +89,7 @@
   body {
     background: transparent;   /* the fixed .bg layer paints the canvas */
     color: var(--text);
-    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
-          "Inter", Roboto, Helvetica, Arial, sans-serif;
+    font: 14px/1.5 "Times New Roman", Times, serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     min-height: 100vh;
@@ -137,10 +136,6 @@
     text-align: right;   /* sits on the right-hand side of the calculator */
   }
   @media (max-width: 640px) { .greeting { font-size: 24px; } }
-  /* On wide screens, sit the calculator toward the right so the video shows */
-  @media (min-width: 1100px) {
-    main { margin: 0 4vw 0 auto; }
-  }
 
   .card {
     background: color-mix(in srgb, var(--card) 90%, transparent);
@@ -151,14 +146,6 @@
     box-shadow: var(--shadow);
     overflow: hidden;
   }
-
-  .sarTitle {
-    background: var(--band); padding: 18px 28px;
-    border-bottom: 1px solid var(--hairline);
-    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
-  }
-  .sarTitle h1 { margin: 0; font-weight: 700; font-size: 18px; letter-spacing: -.3px; color: var(--text); }
-  .sarTitle .sub { color: var(--faint); font-size: 12.5px; }
 
   .sarGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; padding: 26px 28px; }
   @media (max-width: 720px) { .sarGrid { grid-template-columns: 1fr; } }
@@ -303,10 +290,6 @@
 <main>
   <h2 class="greeting" id="greeting"></h2>
   <div id="calcPanel" class="card">
-    <div class="sarTitle">
-      <h1>Jaden’s Risk Calculator</h1>
-      <span class="sub">Size positions by the % of your account you risk</span>
-    </div>
     <div class="sarGrid">
       <div class="sarCol">
         <div class="sar-el">
@@ -337,8 +320,8 @@
           </div>
         </div>
         <div class="sar-el">
-          <div class="sarLabel">Stop Loss Price
-            <i class="info" title="The price at which you exit if the trade goes against you">i</i></div>
+          <div class="sarLabel">LOD
+            <i class="info" title="Low of day — the level the risk per share is measured against (Entry − LOD)">i</i></div>
           <div class="sarField"><span class="prefix">$</span>
             <input id="cStop" type="number" min="0" step="0.01" value="0.00">
             <button type="button" class="sarStep" data-target="cStop" data-step="-1" aria-label="Decrement">−</button>

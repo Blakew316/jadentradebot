@@ -152,8 +152,9 @@ class TestCalculator:
                      "sheet.zohopublic.com", "SAR RISK MANAGEMENT SHEET"):
             assert gone not in html, gone
         for text in ("0.25%", "0.5%", "Account Size", "Entry Price",
-                     "Stop Loss Price", "Shares to Buy", "Risking 1%"):
+                     "LOD", "Shares to Buy", "Risking 1%"):
             assert text in html, text
+        assert "Stop Loss" not in html   # relabelled to LOD
         assert "Account Size $" not in html   # label's trailing $ removed
         assert 'value="10,000"' not in html   # no default account size
 
