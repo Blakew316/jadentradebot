@@ -101,32 +101,33 @@
   }
   button, select, input { touch-action: manipulation; }
 
+  /* Transparent header — no banner, elements float over the background */
   header {
-    background: var(--header-bg);
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    border-bottom: 1px solid var(--hairline-soft);
+    background: transparent;
     height: 58px;
     padding: 0 calc(28px + env(safe-area-inset-right)) 0 calc(28px + env(safe-area-inset-left));
     display: flex; align-items: center; gap: 16px;
     position: sticky; top: 0; z-index: 10;
     padding-top: env(safe-area-inset-top);
     box-sizing: content-box;
+    text-shadow: 0 1px 10px rgba(0, 0, 0, .5);
   }
   .brand { display: flex; align-items: center; gap: 10px; }
-  .brand .mark { width: 27px; height: 27px; flex: none; }
-  .brand .name { font-size: 15px; font-weight: 700; letter-spacing: -.25px; }
-  .brand .name span { color: var(--accent); }
-  header .divider { width: 1px; height: 20px; background: var(--hairline); }
-  header .product { font-size: 13px; font-weight: 500; color: var(--muted); letter-spacing: -.1px; }
+  .brand .mark { width: 27px; height: 27px; flex: none;
+    filter: drop-shadow(0 1px 6px rgba(0,0,0,.45)); }
+  .brand .name { font-size: 15px; font-weight: 700; letter-spacing: -.25px; color: #fff; }
+  .brand .name span { color: #8ab4ff; }
+  header .divider { width: 1px; height: 20px; background: rgba(255,255,255,.3); }
+  header .product { font-size: 13px; font-weight: 500; color: rgba(255,255,255,.82); letter-spacing: -.1px; }
   #themeBtn {
     margin-left: auto; width: 36px; height: 36px; flex: none;
-    border: 1px solid var(--hairline); border-radius: 50%;
-    background: var(--card); color: var(--muted); cursor: pointer;
+    border: 1px solid rgba(255,255,255,.3); border-radius: 50%;
+    background: rgba(255,255,255,.12); color: rgba(255,255,255,.9); cursor: pointer;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     display: inline-flex; align-items: center; justify-content: center;
     transition: border-color .15s ease, color .15s ease, background .15s ease;
   }
-  #themeBtn:hover { color: var(--text); border-color: var(--faint); }
+  #themeBtn:hover { color: #fff; border-color: rgba(255,255,255,.55); background: rgba(255,255,255,.2); }
   #themeBtn svg { width: 17px; height: 17px; }
 
   main { width: 100%; max-width: 880px; margin: 0 auto; padding: 40px 24px 56px; flex: 1; }
