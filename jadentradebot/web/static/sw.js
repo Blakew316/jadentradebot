@@ -8,7 +8,6 @@ const SHELL = [
   "./",
   "manifest.webmanifest",
   "bg.jpg",
-  "icons/logo.png",
   "icons/icon-180.png",
   "icons/icon-192.png",
   "icons/icon-512.png",
