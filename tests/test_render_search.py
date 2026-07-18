@@ -151,9 +151,11 @@ class TestCalculator:
                      "Option Value", "Options to Buy",
                      "sheet.zohopublic.com", "SAR RISK MANAGEMENT SHEET"):
             assert gone not in html, gone
-        for text in ("0.25%", "0.5%", "Account Size $", "Entry Price",
+        for text in ("0.25%", "0.5%", "Account Size", "Entry Price",
                      "Stop Loss Price", "Shares to Buy", "Risking 1%"):
             assert text in html, text
+        assert "Account Size $" not in html   # label's trailing $ removed
+        assert 'value="10,000"' not in html   # no default account size
 
     def test_static_page_has_calculator(self, tmp_path):
         from jadentradebot.sitegen import build_site

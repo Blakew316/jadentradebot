@@ -155,10 +155,17 @@
   .sarField { display: flex; align-items: center; gap: 7px; }
   .sarField .prefix { font-weight: 500; font-size: 13px; color: var(--faint); }
   .sarField input, .sarField select {
-    width: 100%; min-width: 0; font-size: 14.5px; color: var(--text); background: var(--field);
-    border: 1px solid var(--hairline); border-radius: 10px; padding: 11px 13px;
+    width: 100%; min-width: 0; height: 43px;
+    font-size: 14.5px; color: var(--text); background: var(--field);
+    border: 1px solid var(--hairline); border-radius: 10px; padding: 0 13px;
     font-family: inherit; font-variant-numeric: tabular-nums;
     transition: border-color .15s ease, box-shadow .15s ease, background .25s ease;
+  }
+  .sarField select {
+    -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%238e95a3' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 13px center;
+    padding-right: 36px;
   }
   .sarField input:focus, .sarField select:focus {
     outline: none; border-color: var(--accent);
@@ -221,7 +228,7 @@
     .sarGrid { gap: 20px; padding: 20px 16px; }
     .sarInfoBar { padding: 16px 16px 20px; }
     .sarTitle { padding: 16px 16px; }
-    .sarField input, .sarField select { font-size: 16px; padding: 12px 13px; }
+    .sarField input, .sarField select { font-size: 16px; height: 47px; }
     .sarStep { width: 44px; height: 47px; font-size: 18px; }
     .sarSheetBtn { width: 100%; padding: 14px 22px; }
     .sarNote { margin-left: 0; }
@@ -277,10 +284,10 @@
     <div class="sarGrid">
       <div class="sarCol">
         <div class="sar-el">
-          <div class="sarLabel">Account Size $
+          <div class="sarLabel">Account Size
             <i class="info" title="Your total trading account value in dollars">i</i></div>
           <div class="sarField"><span class="prefix">$</span>
-            <input id="cAccount" type="text" inputmode="decimal" value="10,000" spellcheck="false">
+            <input id="cAccount" type="text" inputmode="decimal" value="" spellcheck="false">
           </div>
         </div>
         <div class="sar-el">
