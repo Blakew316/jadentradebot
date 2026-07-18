@@ -6,135 +6,196 @@
 <title>jadentradebot — DTR vs ATR Stock Identifier</title>
 <style>
   :root {
-    --bg: #131722;
-    --panel: #1c2230;
-    --panel-2: #232b3d;
-    --border: #2e3850;
-    --text: #d7dce8;
-    --muted: #8b93a7;
-    --green: #26a65b;
-    --green-bright: #3ddc84;
-    --orange: #f39c12;
-    --red: #e74c3c;
-    --accent: #4f8cff;
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --muted: #6e6e73;
+    --faint: #86868b;
+    --hairline: #d2d2d7;
+    --hairline-soft: #e8e8ed;
+    --accent: #0071e3;
+    --accent-hover: #0077ed;
+    --green: #34c759;
+    --orange: #ff9500;
+    --red: #ff3b30;
+    --green-text: #1d7d33;
+    --orange-text: #b25000;
+    --red-text: #d70015;
+    --na: #d2d2d7;
+    --radius: 18px;
   }
   * { box-sizing: border-box; }
+  html, body { margin: 0; }
   body {
-    margin: 0;
     background: var(--bg);
     color: var(--text);
-    font: 14px/1.45 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+          Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
   header {
-    display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline;
-    padding: 16px 22px 10px;
-    border-bottom: 1px solid var(--border);
-    background: linear-gradient(180deg, #182036, var(--bg));
+    background: rgba(255,255,255,.85);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--hairline-soft);
+    padding: 18px 28px;
+    display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline;
+    position: sticky; top: 0; z-index: 5;
   }
-  header h1 { font-size: 19px; margin: 0; letter-spacing: .3px; }
-  header h1 .bot { color: var(--accent); }
-  header .sub { color: var(--muted); font-size: 12.5px; }
-  main { padding: 18px 22px 40px; max-width: 1280px; margin: 0 auto; }
+  header h1 { font-size: 19px; font-weight: 600; margin: 0; letter-spacing: -.2px; }
+  header .sub { color: var(--muted); font-size: 12.5px; font-weight: 400; }
+  main { max-width: 1180px; margin: 0 auto; padding: 26px 22px 60px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--hairline-soft);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 2px rgba(0,0,0,.03);
+  }
 
   .controls {
-    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
-    background: var(--panel); border: 1px solid var(--border);
-    border-radius: 10px; padding: 12px 14px; margin-bottom: 16px;
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    padding: 14px 16px; margin-bottom: 14px;
   }
   .controls label { color: var(--muted); font-size: 12px; }
   .controls input[type=text] {
     flex: 1 1 320px; min-width: 220px;
-    background: var(--bg); color: var(--text);
-    border: 1px solid var(--border); border-radius: 7px;
-    padding: 8px 10px; font-size: 13.5px;
+    background: var(--card); color: var(--text);
+    border: 1px solid var(--hairline); border-radius: 12px;
+    padding: 9px 12px; font-size: 14px;
   }
   .controls input[type=number] {
-    width: 64px; background: var(--bg); color: var(--text);
-    border: 1px solid var(--border); border-radius: 7px; padding: 8px 8px;
+    width: 68px; background: var(--card); color: var(--text);
+    border: 1px solid var(--hairline); border-radius: 12px; padding: 9px 10px;
+    font-size: 14px;
   }
   .controls select {
-    background: var(--bg); color: var(--text);
-    border: 1px solid var(--border); border-radius: 7px; padding: 8px 8px;
+    background: var(--card); color: var(--text);
+    border: 1px solid var(--hairline); border-radius: 12px; padding: 9px 10px;
+    font-size: 14px;
+  }
+  .controls input:focus, .controls select:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,113,227,.15);
   }
   .controls button {
-    background: var(--accent); border: 0; color: #fff; font-weight: 600;
-    border-radius: 7px; padding: 9px 18px; cursor: pointer; font-size: 13.5px;
+    background: var(--accent); border: 0; color: #fff; font-weight: 500;
+    border-radius: 980px; padding: 9px 22px; cursor: pointer; font-size: 14px;
+    transition: background .15s ease;
   }
-  .controls button:disabled { opacity: .55; cursor: wait; }
+  .controls button:hover { background: var(--accent-hover); }
+  .controls button:disabled { opacity: .5; cursor: wait; }
+  .controls a { color: var(--accent); text-decoration: none; }
+  .snapshot-note { color: var(--muted); font-size: 12px; }
 
-  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 2px 0 16px; color: var(--muted); font-size: 12.5px; }
-  .legend .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; }
+  .legend {
+    display: flex; gap: 18px; flex-wrap: wrap;
+    margin: 4px 4px 18px; color: var(--muted); font-size: 12.5px;
+  }
+  .dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    margin-right: 6px; vertical-align: 1px;
+  }
+  .dot.GREEN { background: var(--green); }
+  .dot.ORANGE { background: var(--orange); }
+  .dot.RED { background: var(--red); }
+  .dot.NA { background: var(--na); }
 
-  /* thinkorswim-style label chips */
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  /* Label chips — quiet white pills, colour reduced to a dot and the pct */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
   .chip {
-    font: 600 12.5px/1 "Consolas", "Menlo", monospace;
-    color: #0d1117; border-radius: 4px; padding: 8px 10px; cursor: pointer;
-    border: 1px solid rgba(0,0,0,.35); box-shadow: 0 1px 3px rgba(0,0,0,.4);
+    background: var(--card); border: 1px solid var(--hairline-soft);
+    border-radius: 980px; padding: 8px 14px; cursor: pointer;
+    font-size: 12.5px; color: var(--muted);
+    display: inline-flex; align-items: center; gap: 7px;
+    transition: border-color .15s ease, box-shadow .15s ease;
   }
-  .chip .sym { font-weight: 800; margin-right: 7px; }
-  .chip.GREEN  { background: var(--green-bright); }
-  .chip.ORANGE { background: var(--orange); }
-  .chip.RED    { background: var(--red); color: #fff; }
-  .chip.ERR    { background: #3a4257; color: var(--muted); cursor: default; }
+  .chip:hover { border-color: var(--hairline); box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+  .chip .sym { font-weight: 600; color: var(--text); }
+  .chip .pct { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .chip.GREEN .pct { color: var(--green-text); }
+  .chip.ORANGE .pct { color: var(--orange-text); }
+  .chip.RED .pct { color: var(--red-text); }
+  .chip.ERR { cursor: default; color: var(--faint); }
 
-  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .statusMsg { color: var(--muted); margin: 10px 4px 14px; font-size: 13px; }
+
+  .tableWrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 860px; }
   thead th {
-    text-align: right; font-size: 11.5px; text-transform: uppercase; letter-spacing: .6px;
-    color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--border);
-    background: var(--panel-2); cursor: pointer; user-select: none; white-space: nowrap;
+    text-align: right; font-size: 11px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: .7px;
+    color: var(--faint); padding: 12px 14px;
+    border-bottom: 1px solid var(--hairline-soft);
+    cursor: pointer; user-select: none; white-space: nowrap;
   }
   thead th:first-child, thead th:nth-child(2) { text-align: left; }
-  tbody td { padding: 9px 12px; text-align: right; border-bottom: 1px solid #222a3d; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tbody td {
+    padding: 11px 14px; text-align: right;
+    border-bottom: 1px solid var(--hairline-soft);
+    font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 13.5px;
+  }
+  tbody tr:last-child td { border-bottom: 0; }
   tbody td:first-child, tbody td:nth-child(2) { text-align: left; }
-  tbody tr { cursor: pointer; }
-  tbody tr:hover { background: #202942; }
-  tbody tr.selected { background: #24304f; }
-  .sym-cell { font-weight: 700; }
-  .status-pill {
-    display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .5px;
-    border-radius: 20px; padding: 3px 10px; color: #0d1117;
-  }
-  .status-pill.GREEN  { background: var(--green-bright); }
-  .status-pill.ORANGE { background: var(--orange); }
-  .status-pill.RED    { background: var(--red); color: #fff; }
-  .err-row td { color: var(--muted); font-style: italic; }
+  tbody tr { cursor: pointer; transition: background .1s ease; }
+  tbody tr:hover { background: #fafafa; }
+  tbody tr.selected { background: #f0f6ff; }
+  .sym-cell { font-weight: 600; }
+  .status { font-weight: 500; }
+  .status.GREEN { color: var(--green-text); }
+  .status.ORANGE { color: var(--orange-text); }
+  .status.RED { color: var(--red-text); }
+  .err-row td { color: var(--faint); font-style: italic; }
 
-  .meter { display: inline-block; width: 90px; height: 8px; border-radius: 6px; background: #0e1320; vertical-align: middle; margin-left: 8px; overflow: hidden; }
-  .meter i { display: block; height: 100%; border-radius: 6px; }
+  .meter {
+    display: inline-block; width: 84px; height: 4px; border-radius: 4px;
+    background: var(--hairline-soft); vertical-align: 2px; margin-left: 10px;
+    overflow: hidden;
+  }
+  .meter i { display: block; height: 100%; border-radius: 4px; }
 
-  #chartPanel {
-    margin-top: 20px; background: var(--panel); border: 1px solid var(--border);
-    border-radius: 10px; padding: 14px 16px 6px; display: none;
+  #chartPanel { margin-top: 18px; padding: 18px 20px 10px; display: none; }
+  #chartPanel h2 { margin: 0 0 4px; font-size: 16px; font-weight: 600; letter-spacing: -.2px; }
+  .chartLabel {
+    display: inline-block; font-size: 12.5px; font-weight: 600;
+    border-radius: 980px; padding: 6px 12px; margin: 6px 0 10px;
+    background: var(--bg); color: var(--muted);
+    font-variant-numeric: tabular-nums;
   }
-  #chartPanel h2 { margin: 0 0 2px; font-size: 15px; }
-  #chartPanel .chartLabel {
-    display: inline-block; font: 700 12.5px/1 "Consolas","Menlo",monospace;
-    border-radius: 4px; padding: 6px 9px; margin: 6px 0 10px; color: #0d1117;
+  .chartLabel.GREEN { background: rgba(52,199,89,.12); color: var(--green-text); }
+  .chartLabel.ORANGE { background: rgba(255,149,0,.14); color: var(--orange-text); }
+  .chartLabel.RED { background: rgba(255,59,48,.12); color: var(--red-text); }
+  #chartMeta { color: var(--muted); font-size: 12.5px; margin-bottom: 8px; }
+  #chartMeta b { color: var(--text); font-weight: 600; }
+  svg text { fill: var(--faint); font-size: 10.5px;
+             font-family: "SF Mono", "Menlo", "Consolas", monospace; }
+
+  footer {
+    color: var(--faint); font-size: 11.5px; margin-top: 34px; text-align: center;
+    line-height: 1.7;
   }
-  #chartMeta { color: var(--muted); font-size: 12.5px; margin-bottom: 6px; }
-  #chartMeta b { color: var(--text); }
-  svg text { fill: var(--muted); font-size: 10.5px; font-family: "Consolas","Menlo",monospace; }
-  .statusMsg { color: var(--muted); margin: 14px 2px; }
-  footer { color: var(--muted); font-size: 11.5px; margin-top: 26px; text-align: center; }
   footer a { color: var(--accent); text-decoration: none; }
+
+  @media (max-width: 640px) {
+    main { padding: 16px 12px 40px; }
+    header { padding: 14px 16px; }
+  }
 </style>
 </head>
 <body>
 <header>
-  <h1>jaden<span class="bot">tradebot</span> · DTR vs ATR Stock Identifier</h1>
+  <h1>jadentradebot · DTR vs ATR Stock Identifier</h1>
   <span class="sub">Port of the thinkorswim “Custom ATR Plot” by 7of9 (usethinkscript.com) · v{{ version }}</span>
 </header>
 
 <main>
   {% if static_data %}
-  <div class="controls" style="justify-content:space-between">
-    <span>📌 Static snapshot · generated <b>{{ static_data.generated_at }}</b> ·
+  <div class="controls card" style="justify-content:space-between">
+    <span>Static snapshot · generated <b>{{ static_data.generated_at }}</b> ·
       source <b>{{ static_data.params.source }}</b> · ATR length <b>{{ static_data.params.atr_length }}</b></span>
-    <span style="color:var(--muted);font-size:12px">Refreshed automatically by GitHub Actions · raw data: <a href="data/scan.json" style="color:var(--accent)">scan.json</a></span>
+    <span class="snapshot-note">Refreshed automatically by GitHub Actions · raw data: <a href="data/scan.json">scan.json</a></span>
   </div>
   {% else %}
-  <div class="controls">
+  <div class="controls card">
     <label>Watchlist</label>
     <input id="tickers" type="text" value="{{ watchlist }}" spellcheck="false"
            placeholder="Comma-separated tickers, e.g. AAPL, TSLA, NVDA">
@@ -152,15 +213,16 @@
   {% endif %}
 
   <div class="legend">
-    <span><i class="dot" style="background:var(--green-bright)"></i><b>GREEN</b>&nbsp;≤ 70% of ATR used — room to move</span>
-    <span><i class="dot" style="background:var(--orange)"></i><b>ORANGE</b>&nbsp;70–90% — extended, caution</span>
-    <span><i class="dot" style="background:var(--red)"></i><b>RED</b>&nbsp;≥ 90% — average range exhausted</span>
+    <span><i class="dot GREEN"></i><b>Green</b>&nbsp;≤ 70% of ATR used — room to move</span>
+    <span><i class="dot ORANGE"></i><b>Orange</b>&nbsp;70–90% — extended, caution</span>
+    <span><i class="dot RED"></i><b>Red</b>&nbsp;≥ 90% — average range exhausted</span>
   </div>
 
   <div id="chips" class="chips"></div>
-  <div id="status" class="statusMsg">Press <b>Scan</b> to run the identifier.</div>
+  <div id="status" class="statusMsg">{% if not static_data %}Press <b>Scan</b> to run the identifier.{% endif %}</div>
 
-  <table id="results" style="display:none">
+  <div class="card tableWrap" id="results" style="display:none">
+  <table>
     <thead>
       <tr>
         <th data-k="symbol">Symbol</th>
@@ -178,8 +240,9 @@
     </thead>
     <tbody id="tbody"></tbody>
   </table>
+  </div>
 
-  <div id="chartPanel">
+  <div id="chartPanel" class="card">
     <h2 id="chartTitle"></h2>
     <div id="chartStudyLabel" class="chartLabel"></div>
     <div id="chartMeta"></div>
@@ -188,7 +251,7 @@
 
   <footer>
     DTR = today’s high − low · ATR = Wilder’s average of daily True Range ·
-    DTR% = how much of the average daily range has been used today.
+    DTR% = how much of the average daily range has been used today.<br>
     Indicator credit: “Custom ATR Plot” by 7of9, shared on
     <a href="https://usethinkscript.com/threads/dtr-vs-atr-indicator-for-thinkorswim.387/">usethinkscript.com</a>.
     Not financial advice.
@@ -199,7 +262,8 @@
 <script>
 "use strict";
 const STATIC = window.STATIC_DATA || null;
-const COLORS = { GREEN: "#3ddc84", ORANGE: "#f39c12", RED: "#e74c3c" };
+const COLORS = { GREEN: "#34c759", ORANGE: "#ff9500", RED: "#ff3b30", NA: "#d2d2d7" };
+const CANDLE_UP = "#34c759", CANDLE_DOWN = "#ff3b30";
 let lastRows = [];
 let sortKey = null, sortDir = 1;
 let selectedSymbol = null;
@@ -208,6 +272,7 @@ const $ = (id) => document.getElementById(id);
 const fmt = (v, d = 2) => (v === null || v === undefined || Number.isNaN(v)) ? "—" : Number(v).toFixed(d);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g,
   (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const title = (s) => s ? s[0] + s.slice(1).toLowerCase() : s;
 
 function params() {
   return {
@@ -234,7 +299,7 @@ async function runScan() {
   try {
     const p = params();
     const qs = new URLSearchParams({ tickers: p.tickers, atr_length: p.atr_length, source: p.source });
-    const resp = await fetch("/api/scan?" + qs.toString());
+    const resp = await fetch("api/scan?" + qs.toString());
     if (!resp.ok) throw new Error("HTTP " + resp.status);
     const data = await resp.json();
     lastRows = data.rows;
@@ -273,8 +338,11 @@ function render() {
     const div = document.createElement("div");
     if (r.ok) {
       div.className = "chip " + esc(r.status);
-      div.innerHTML = `<span class="sym">${esc(r.symbol)}</span>${esc(r.label)}`;
-      div.title = r.meaning;
+      div.innerHTML =
+        `<i class="dot ${esc(r.status)}"></i><span class="sym">${esc(r.symbol)}</span>` +
+        `<span>DTR ${fmt(r.dtr)} vs ATR ${fmt(r.atr)}</span>` +
+        `<span class="pct">${fmt(r.dtr_pct, 0)}%</span>`;
+      div.title = r.label + " — " + r.meaning;
       div.onclick = () => showChart(r.symbol);
     } else {
       div.className = "chip ERR";
@@ -295,11 +363,11 @@ function render() {
       continue;
     }
     if (r.symbol === selectedSymbol) tr.className = "selected";
-    const meterColor = COLORS[r.status];
+    const meterColor = COLORS[r.status] || COLORS.NA;
     const meterW = Math.max(0, Math.min(100, r.dtr_pct));
     tr.innerHTML = `
       <td class="sym-cell">${esc(r.symbol)}</td>
-      <td><span class="status-pill ${esc(r.status)}">${esc(r.status)}</span></td>
+      <td><span class="status ${esc(r.status)}"><i class="dot ${esc(r.status)}"></i>${esc(title(r.status))}</span></td>
       <td>${fmt(r.dtr_pct, 0)}%<span class="meter"><i style="width:${meterW}%;background:${meterColor}"></i></span></td>
       <td>${fmt(r.dtr)}</td>
       <td>${fmt(r.atr)}</td>
@@ -316,9 +384,9 @@ function render() {
 }
 
 function applyChart(data) {
-  $("chartStudyLabel").textContent = data.label;
-  $("chartStudyLabel").style.background = COLORS[data.status];
-  $("chartStudyLabel").style.color = data.status === "RED" ? "#fff" : "#0d1117";
+  const lbl = $("chartStudyLabel");
+  lbl.textContent = data.label;
+  lbl.className = "chartLabel " + (data.status || "");
   $("chartMeta").innerHTML =
     `${esc(data.meaning)}. Range left today: <b>$${fmt(data.range_left)}</b> (${fmt(data.range_left_pct,0)}% of ATR) · ` +
     `ATR upside target from day low: <b>$${fmt(data.atr_buy_target)}</b> · ` +
@@ -335,26 +403,27 @@ async function showChart(symbol) {
   const panel = $("chartPanel");
   panel.style.display = "block";
   $("chartTitle").textContent = symbol + " — daily";
-  $("chartStudyLabel").textContent = "loading…";
-  $("chartStudyLabel").style.background = "#3a4257";
+  const lbl = $("chartStudyLabel");
+  lbl.textContent = "loading…";
+  lbl.className = "chartLabel";
   $("chart").innerHTML = "";
   $("chartMeta").textContent = "";
   if (STATIC) {
     const data = STATIC.charts && STATIC.charts[symbol];
     if (data) applyChart(data);
-    else $("chartStudyLabel").textContent = "chart unavailable in this snapshot";
+    else lbl.textContent = "chart unavailable in this snapshot";
     return;
   }
   const p = params();
   const qs = new URLSearchParams({ atr_length: p.atr_length, source: p.source });
   try {
-    const resp = await fetch(`/api/chart/${encodeURIComponent(symbol)}?` + qs.toString());
+    const resp = await fetch(`api/chart/${encodeURIComponent(symbol)}?` + qs.toString());
     const data = await resp.json();
     if (req !== chartReq) return;
     if (!resp.ok || !data.ok) throw new Error(data.error || ("HTTP " + resp.status));
     applyChart(data);
   } catch (err) {
-    if (req === chartReq) $("chartStudyLabel").textContent = "chart unavailable: " + err.message;
+    if (req === chartReq) lbl.textContent = "chart unavailable: " + err.message;
   }
 }
 
@@ -378,14 +447,13 @@ function drawChart(bars) {
   svg.setAttribute("width", "100%");
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
 
-  // horizontal gridlines + right-side price axis
   for (let i = 0; i <= 4; i++) {
     const v = lo + (hi - lo) * i / 4;
     const gy = y(v);
     const line = document.createElementNS(svgNS, "line");
     line.setAttribute("x1", padL); line.setAttribute("x2", W - padR);
     line.setAttribute("y1", gy); line.setAttribute("y2", gy);
-    line.setAttribute("stroke", "#242e47"); line.setAttribute("stroke-width", "1");
+    line.setAttribute("stroke", "#f0f0f2"); line.setAttribute("stroke-width", "1");
     svg.appendChild(line);
     const t = document.createElementNS(svgNS, "text");
     t.setAttribute("x", W - padR + 6); t.setAttribute("y", gy + 3.5);
@@ -396,7 +464,7 @@ function drawChart(bars) {
   bars.forEach((b, i) => {
     const cx = padL + step * (i + 0.5);
     const up = (b.close ?? 0) >= (b.open ?? b.close ?? 0);
-    const color = up ? "#3ddc84" : "#e74c3c";
+    const color = up ? CANDLE_UP : CANDLE_DOWN;
     const wick = document.createElementNS(svgNS, "line");
     wick.setAttribute("x1", cx); wick.setAttribute("x2", cx);
     wick.setAttribute("y1", y(b.high)); wick.setAttribute("y2", y(b.low));
@@ -417,13 +485,14 @@ function drawChart(bars) {
     rect.appendChild(title);
     svg.appendChild(rect);
 
-    // DTR% strip under each bar, colored by that day's status
+    // DTR% strip under each bar, coloured by that day's status
     const strip = document.createElementNS(svgNS, "rect");
     strip.setAttribute("x", cx - cw / 2);
     strip.setAttribute("y", H - padB + 6);
     strip.setAttribute("width", cw);
-    strip.setAttribute("height", 6);
-    strip.setAttribute("fill", COLORS[b.status] || "#3a4257");
+    strip.setAttribute("height", 4);
+    strip.setAttribute("rx", 2);
+    strip.setAttribute("fill", COLORS[b.status] || COLORS.NA);
     strip.appendChild(title.cloneNode(true));
     svg.appendChild(strip);
 
