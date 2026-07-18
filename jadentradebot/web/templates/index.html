@@ -405,9 +405,9 @@ $("themeBtn").addEventListener("click", () =>
 
 sarRecalc();
 
-// ---- background parallax: reacts to device movement only ------------------
-// Gyroscope tilt on phones/tablets; mouse movement on desktop. No ambient
-// animation — the background is still unless the device moves.
+// ---- background parallax: reacts to physical device movement only ---------
+// Gyroscope tilt on phones/tablets. No mouse tracking and no ambient
+// animation — on devices without motion sensors the background is still.
 (function () {
   const img = $("bgImg");
   if (!img) return;
@@ -424,11 +424,6 @@ sarRecalc();
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
-
-  window.addEventListener("mousemove", (e) => {
-    tx = (e.clientX / window.innerWidth - 0.5) * -2 * MAX;
-    ty = (e.clientY / window.innerHeight - 0.5) * -2 * MAX;
-  }, { passive: true });
 
   function onTilt(e) {
     if (e.gamma === null || e.beta === null) return;
