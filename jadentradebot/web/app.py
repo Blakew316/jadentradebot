@@ -186,9 +186,9 @@ def create_app(
     def apple_touch_icon():
         return send_from_directory(f"{app.static_folder}/icons", "icon-180.png")
 
-    @app.get("/bg.svg")
+    @app.get("/bg.jpg")
     def background():
-        return send_from_directory(app.static_folder, "bg.svg", mimetype="image/svg+xml")
+        return send_from_directory(app.static_folder, "bg.jpg", mimetype="image/jpeg")
 
     @app.get("/api/symbols")
     def api_symbols():

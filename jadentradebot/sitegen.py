@@ -77,7 +77,7 @@ def build_site(
     # PWA assets: the snapshot is installable/offline-capable just like the
     # live app (manifest, service worker, icons copied to the site root).
     static_dir = Path(__file__).parent / "web" / "static"
-    for name in ("manifest.webmanifest", "sw.js", "bg.svg"):
+    for name in ("manifest.webmanifest", "sw.js", "bg.jpg"):
         shutil.copy2(static_dir / name, out / name)
     shutil.copytree(static_dir / "icons", out / "icons", dirs_exist_ok=True)
     shutil.copy2(static_dir / "icons" / "icon-180.png", out / "apple-touch-icon.png")
