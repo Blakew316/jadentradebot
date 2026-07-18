@@ -89,25 +89,6 @@
   :root[data-theme="dark"] .bg-veil {
     background: radial-gradient(120% 90% at 50% 10%, rgba(4,8,18,.25) 30%, rgba(4,8,18,.62) 100%);
   }
-  .bg-sheen {
-    position: absolute; inset: -12%;
-    background: linear-gradient(115deg,
-      transparent 38%, rgba(255,255,255,.10) 47%,
-      rgba(255,255,255,.16) 50%, rgba(255,255,255,.10) 53%, transparent 62%);
-    background-size: 240% 240%;
-    animation: sheen 11s ease-in-out infinite;
-    mix-blend-mode: screen; will-change: transform, background-position;
-    pointer-events: none;
-  }
-  @keyframes sheen {
-    0%   { background-position: 120% 0%; }
-    55%  { background-position: -20% 100%; }
-    100% { background-position: 120% 0%; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .bg-sheen { animation: none; }
-  }
-
   * { box-sizing: border-box; }
   html, body { margin: 0; }
   body {
@@ -271,7 +252,6 @@
 
 <div class="bg" aria-hidden="true">
   <div class="bg-img" id="bgImg"></div>
-  <div class="bg-sheen" id="bgSheen"></div>
   <div class="bg-veil"></div>
 </div>
 
@@ -433,12 +413,12 @@ $("themeBtn").addEventListener("click", () =>
 
 sarRecalc();
 
-// ---- reflective background: parallax that reacts to device movement -------
-// Mouse movement on desktop; gyroscope tilt on phones/tablets. The image and
-// the light sheen move in opposite directions, which reads as a reflection.
+// ---- background parallax: reacts to device movement only ------------------
+// Gyroscope tilt on phones/tablets; mouse movement on desktop. No ambient
+// animation — the background is still unless the device moves.
 (function () {
-  const img = $("bgImg"), sheen = $("bgSheen");
-  if (!img || !sheen) return;
+  const img = $("bgImg");
+  if (!img) return;
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
   let tx = 0, ty = 0;      // target offset (px)
@@ -449,7 +429,6 @@ sarRecalc();
     cx += (tx - cx) * 0.08;
     cy += (ty - cy) * 0.08;
     img.style.transform = `translate3d(${cx}px, ${cy}px, 0) scale(1.06)`;
-    sheen.style.transform = `translate3d(${-cx * 1.8}px, ${-cy * 1.8}px, 0)`;
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);

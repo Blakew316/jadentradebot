@@ -1,73 +1,36 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
   <defs>
     <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0a1630"/>
-      <stop offset=".45" stop-color="#122a52"/>
-      <stop offset="1" stop-color="#0b1a36"/>
+      <stop offset="0" stop-color="#0a1a3a"/>
+      <stop offset=".5" stop-color="#123a6e"/>
+      <stop offset="1" stop-color="#0a1c40"/>
     </linearGradient>
-    <radialGradient id="lightTR" cx="78%" cy="12%" r="60%">
-      <stop offset="0" stop-color="#3d7dd8" stop-opacity=".35"/>
-      <stop offset="1" stop-color="#3d7dd8" stop-opacity="0"/>
+    <radialGradient id="centerGlow" cx="55%" cy="40%" r="70%">
+      <stop offset="0" stop-color="#2f6fc4" stop-opacity=".30"/>
+      <stop offset="1" stop-color="#2f6fc4" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="lightBL" cx="12%" cy="92%" r="55%">
-      <stop offset="0" stop-color="#1d4d9e" stop-opacity=".28"/>
-      <stop offset="1" stop-color="#1d4d9e" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="areaBlue" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#5aa9ff" stop-opacity=".30"/>
-      <stop offset="1" stop-color="#5aa9ff" stop-opacity="0"/>
+    <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7db8ff" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#7db8ff" stop-opacity="0"/>
     </linearGradient>
     <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="7" result="b"/>
+      <feGaussianBlur stdDeviation="6" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
 
   <rect width="1600" height="900" fill="url(#bgGrad)"/>
-  <rect width="1600" height="900" fill="url(#lightTR)"/>
-  <rect width="1600" height="900" fill="url(#lightBL)"/>
+  <rect width="1600" height="900" fill="url(#centerGlow)"/>
 
-  <!-- grid -->
-  <g stroke="#ffffff" stroke-opacity=".05" stroke-width="1">
+  <!-- faint grid -->
+  <g stroke="#ffffff" stroke-opacity=".045" stroke-width="1">
     <path d="M0 150H1600M0 300H1600M0 450H1600M0 600H1600M0 750H1600"/>
     <path d="M200 0V900M400 0V900M600 0V900M800 0V900M1000 0V900M1200 0V900M1400 0V900"/>
   </g>
 
-  <!-- candlesticks -->
-  <g opacity=".55">
-    <g stroke="#39d98a" fill="#39d98a">
-      <path d="M132 705v-92" stroke-width="3"/><rect x="118" y="640" width="28" height="46" rx="3"/>
-      <path d="M292 660v-104" stroke-width="3"/><rect x="278" y="586" width="28" height="58" rx="3"/>
-      <path d="M532 622v-96" stroke-width="3"/><rect x="518" y="552" width="28" height="52" rx="3"/>
-      <path d="M772 560v-96" stroke-width="3"/><rect x="758" y="492" width="28" height="50" rx="3"/>
-      <path d="M1012 512v-102" stroke-width="3"/><rect x="998" y="438" width="28" height="56" rx="3"/>
-      <path d="M1252 438v-96" stroke-width="3"/><rect x="1238" y="368" width="28" height="52" rx="3"/>
-      <path d="M1492 372v-100" stroke-width="3"/><rect x="1478" y="300" width="28" height="54" rx="3"/>
-    </g>
-    <g stroke="#ff6b62" fill="#ff6b62">
-      <path d="M212 718v-84" stroke-width="3"/><rect x="198" y="656" width="28" height="40" rx="3"/>
-      <path d="M412 680v-92" stroke-width="3"/><rect x="398" y="610" width="28" height="44" rx="3"/>
-      <path d="M652 640v-84" stroke-width="3"/><rect x="638" y="576" width="28" height="40" rx="3"/>
-      <path d="M892 585v-88" stroke-width="3"/><rect x="878" y="518" width="28" height="42" rx="3"/>
-      <path d="M1132 528v-84" stroke-width="3"/><rect x="1118" y="464" width="28" height="40" rx="3"/>
-      <path d="M1372 452v-86" stroke-width="3"/><rect x="1358" y="388" width="28" height="42" rx="3"/>
-    </g>
-  </g>
-
-  <!-- area + main line -->
-  <path d="M0 760 L140 700 L300 730 L460 640 L620 668 L780 560 L920 596 L1080 470 L1240 505 L1420 370 L1600 320 L1600 900 L0 900 Z"
-        fill="url(#areaBlue)"/>
-  <path d="M0 760 L140 700 L300 730 L460 640 L620 668 L780 560 L920 596 L1080 470 L1240 505 L1420 370 L1600 320"
-        fill="none" stroke="#63b3ff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" filter="url(#glow)"/>
-  <!-- secondary line -->
-  <path d="M0 820 L180 790 L360 805 L540 740 L720 762 L900 680 L1080 706 L1260 610 L1440 640 L1600 545"
-        fill="none" stroke="#37e08b" stroke-width="3" stroke-opacity=".8" stroke-linejoin="round" stroke-linecap="round"/>
-
-  <!-- data points -->
-  <g fill="#bfe0ff" filter="url(#glow)">
-    <circle cx="460" cy="640" r="7"/>
-    <circle cx="780" cy="560" r="7"/>
-    <circle cx="1080" cy="470" r="8"/>
-    <circle cx="1420" cy="370" r="8"/>
-  </g>
+  <!-- rising market line -->
+  <path d="M0 780 L170 700 L340 745 L510 620 L680 660 L850 520 L1020 565 L1190 420 L1360 460 L1600 290 L1600 900 L0 900 Z"
+        fill="url(#area)"/>
+  <path d="M0 780 L170 700 L340 745 L510 620 L680 660 L850 520 L1020 565 L1190 420 L1360 460 L1600 290"
+        fill="none" stroke="#8ec4ff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" filter="url(#glow)"/>
 </svg>
