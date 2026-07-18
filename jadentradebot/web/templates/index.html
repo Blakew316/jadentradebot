@@ -195,6 +195,7 @@
   .sar-formula .sarResult {
     font-weight: 700; font-size: 38px; color: #fff; line-height: 1;
     font-variant-numeric: tabular-nums; letter-spacing: -1px;
+    min-height: 1em;   /* tile keeps its size while the result is empty */
   }
 
   .sarInfoBar {
@@ -315,12 +316,12 @@
       <div class="sarCol">
         <div class="sar-formula">
           <div class="sarFormulaLabel" id="rSharesLabel">Shares to Buy · Risking 1%</div>
-          <div class="sarResult" id="rShares">—</div>
+          <div class="sarResult" id="rShares"></div>
         </div>
       </div>
     </div>
     <div class="sarInfoBar">
-      <span class="sarNote">Shares = Risk ÷ (Entry − EOD)</span>
+      <span class="sarNote">Shares = Risk ÷ (Entry − LOD)</span>
     </div>
   </div>
 </main>
@@ -352,7 +353,7 @@ function sarRecalc() {
   if (riskAmt > 0 && perShare > 0) {
     $("rShares").textContent = Math.floor(riskAmt / perShare).toLocaleString("en-US");
   } else {
-    $("rShares").textContent = "—";
+    $("rShares").textContent = "";   // nothing until the inputs are valid
   }
 }
 
