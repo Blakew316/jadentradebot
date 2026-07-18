@@ -130,15 +130,16 @@
   #themeBtn:hover { color: #fff; border-color: rgba(255,255,255,.55); background: rgba(255,255,255,.2); }
   #themeBtn svg { width: 17px; height: 17px; }
 
-  main { width: 100%; max-width: 880px; margin: 0 auto; padding: 76px 24px 56px; flex: 1; }
+  main { width: 100%; max-width: 880px; margin: 0 auto; padding: 52px 24px 56px; flex: 1; }
   .greeting {
     margin: 0 4px 18px; font-size: 30px; font-weight: 700; letter-spacing: -.5px;
     color: #fff; text-shadow: 0 2px 14px rgba(0, 0, 0, .55);
+    text-align: right;   /* sits on the right-hand side of the calculator */
   }
   @media (max-width: 640px) { .greeting { font-size: 24px; } }
   /* On wide screens, sit the calculator toward the right so the video shows */
   @media (min-width: 1100px) {
-    main { margin: 0 7vw 0 auto; }
+    main { margin: 0 4vw 0 auto; }
   }
 
   .card {
