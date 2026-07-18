@@ -103,23 +103,23 @@
   /* Transparent header — no banner, elements float over the background */
   header {
     background: transparent;
-    height: 58px;
+    height: 87px;
     padding: 0 calc(28px + env(safe-area-inset-right)) 0 calc(28px + env(safe-area-inset-left));
-    display: flex; align-items: center; gap: 16px;
+    display: flex; align-items: center; gap: 24px;
     position: sticky; top: 0; z-index: 10;
     padding-top: env(safe-area-inset-top);
     box-sizing: content-box;
     text-shadow: 0 1px 10px rgba(0, 0, 0, .5);
   }
-  .brand { display: flex; align-items: center; gap: 10px; }
-  .brand .mark { width: 27px; height: 27px; flex: none;
+  .brand { display: flex; align-items: center; gap: 15px; }
+  .brand .mark { width: 40px; height: 40px; flex: none;
     filter: drop-shadow(0 1px 6px rgba(0,0,0,.45)); }
-  .brand .name { font-size: 15px; font-weight: 700; letter-spacing: -.25px; color: #fff; }
+  .brand .name { font-size: 22px; font-weight: 700; letter-spacing: -.35px; color: #fff; }
   .brand .name span { color: #8ab4ff; }
-  header .divider { width: 1px; height: 20px; background: rgba(255,255,255,.3); }
-  header .product { font-size: 13px; font-weight: 500; color: rgba(255,255,255,.82); letter-spacing: -.1px; }
+  header .divider { width: 1.5px; height: 30px; background: rgba(255,255,255,.3); }
+  header .product { font-size: 20px; font-weight: 500; color: rgba(255,255,255,.82); letter-spacing: -.15px; }
   #themeBtn {
-    margin-left: auto; width: 36px; height: 36px; flex: none;
+    margin-left: auto; width: 54px; height: 54px; flex: none;
     border: 1px solid rgba(255,255,255,.3); border-radius: 50%;
     background: rgba(255,255,255,.12); color: rgba(255,255,255,.9); cursor: pointer;
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
@@ -127,7 +127,7 @@
     transition: border-color .15s ease, color .15s ease, background .15s ease;
   }
   #themeBtn:hover { color: #fff; border-color: rgba(255,255,255,.55); background: rgba(255,255,255,.2); }
-  #themeBtn svg { width: 17px; height: 17px; }
+  #themeBtn svg { width: 26px; height: 26px; }
 
   main { width: 100%; max-width: 880px; margin: 0 auto; padding: 52px 24px 56px; flex: 1; }
   .greeting {
