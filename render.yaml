@@ -1,0 +1,30 @@
+# Render Blueprint — deploys the interactive DTR vs ATR dashboard with
+# live search. In Render: New + -> Blueprint -> connect this repo, or create
+# a Web Service manually with the same build/start commands.
+services:
+  - type: web
+    name: jadentradebot
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: >-
+      gunicorn 'jadentradebot.web.app:app'
+      --workers 2 --worker-class gthread --threads 8
+      --timeout 120 --bind 0.0.0.0:$PORT
+    healthCheckPath: /healthz
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      # Comma-separated default watchlist shown on first load (visitors can
+      # search and add any symbol live).
+      - key: WATCHLIST
+        value: AAPL,MSFT,NVDA,TSLA,AMZN,META,GOOGL,AMD,SPY,QQQ
+      # auto = Yahoo Finance with Stooq fallback.
+      - key: DATA_SOURCE
+        value: auto
+      - key: ATR_LENGTH
+        value: "14"
+      # Seconds to cache fetched market data in-process (keeps a busy site
+      # from hammering the data providers). 0 disables.
+      - key: DATA_CACHE_TTL
+        value: "300"

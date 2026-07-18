@@ -155,9 +155,42 @@ python -m jadentradebot sitegen --out site            # live data
 python -m jadentradebot sitegen --out site --source offline   # demo data
 ```
 
-To host the *interactive* Flask dashboard instead (live re-scans from the
-browser), use any Python host — e.g. Render, Fly.io, Railway — with
-`pip install .` and `python -m jadentradebot web --host 0.0.0.0 --port $PORT`.
+## Deploying the interactive app on Render (live search)
+
+GitHub Pages serves a snapshot; **Render runs the real app**, where visitors
+can search any stock — by ticker or company name — and scan it live. The repo
+ships a ready-made blueprint (`render.yaml`):
+
+1. Sign in at [render.com](https://render.com) → **New + → Blueprint** →
+   connect the `jadentradebot` GitHub repo (pick the branch you deploy from).
+2. Render reads `render.yaml` and creates the web service automatically:
+   gunicorn serving the Flask app on the free plan, with a `/healthz` health
+   check. Click **Apply** and wait for the first deploy.
+3. Your app is live at `https://jadentradebot.onrender.com` (name may vary).
+
+Configuration lives in environment variables (Render dashboard → Environment):
+`WATCHLIST` (default tickers shown on load), `DATA_SOURCE` (`auto`),
+`ATR_LENGTH`, `LOOKBACK_DAYS`, and `DATA_CACHE_TTL` — seconds that fetched
+market data is cached in-process (default 300) so a busy site doesn't hammer
+the providers.
+
+**Custom domain:** in Render → Settings → Custom Domains add e.g.
+`app.jadenstradebot.com`, then create the CNAME it shows you in Namecheap
+(Host `app` → the `.onrender.com` target). Keep GitHub Pages on the apex
+domain and the interactive app on the subdomain.
+
+**Free-tier note:** Render's free instances sleep after ~15 idle minutes; the
+first visit afterwards takes ~30-60 s to wake. Paid instances stay warm.
+
+### Live search
+
+The dashboard's search bar accepts a ticker or a company name ("PLTR" or
+"Palantir"), with autocomplete suggestions from a bundled directory of ~190
+liquid stocks, ETFs, and indices (`jadentradebot/web/symbols.json` — edit to
+taste; `GET /api/symbols` serves it). Enter or **Add to scan** fetches the
+symbol live, adds it to the watchlist, and opens its chart. Any symbol the
+data providers know works, including ones not in the directory. On the static
+GitHub Pages snapshot the same bar filters the scanned symbols instead.
 
 ## Data sources
 

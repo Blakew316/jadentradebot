@@ -106,6 +106,18 @@
   .controls a { color: var(--accent); text-decoration: none; }
   .snapshot-note { color: var(--faint); font-size: 12px; }
 
+  .searchRow { padding: 10px 16px; gap: 10px; }
+  .searchRow .searchIcon { color: var(--faint); }
+  .searchRow input[type=text] { flex: 1 1 280px; min-width: 200px; }
+  .searchRow button {
+    background: var(--card); color: var(--brand);
+    border: 1px solid var(--line); font-weight: 600;
+    border-radius: 8px; padding: 9px 18px; cursor: pointer; font-size: 13px;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .searchRow button:hover { border-color: var(--brand-2); background: #f8fafc; }
+  .searchRow .hint { color: var(--faint); font-size: 11.5px; }
+
   .legend {
     display: flex; gap: 22px; flex-wrap: wrap;
     margin: 6px 4px 18px; color: var(--muted); font-size: 12.5px;
@@ -220,6 +232,10 @@
     <symbol id="i-na" viewBox="0 0 20 20">
       <circle cx="10" cy="10" r="7.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.5 2.8"/>
     </symbol>
+    <symbol id="i-search" viewBox="0 0 20 20">
+      <circle cx="8.8" cy="8.8" r="5.6" fill="none" stroke="currentColor" stroke-width="1.7"/>
+      <path d="M13.2 13.2l3.6 3.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+    </symbol>
     <symbol id="i-mark" viewBox="0 0 32 32">
       <rect width="32" height="32" rx="7" fill="#16345c"/>
       <rect x="7" y="13" width="3.6" height="9" rx="1" fill="#fff" opacity=".85"/>
@@ -266,6 +282,21 @@
     <button id="scanBtn">Run scan</button>
   </div>
   {% endif %}
+
+  <div class="searchRow controls card">
+    <svg class="icon searchIcon" aria-hidden="true"><use href="#i-search"/></svg>
+    {% if static_data %}
+    <input id="search" type="text" spellcheck="false" autocomplete="off"
+           placeholder="Filter this snapshot — type a ticker, e.g. NVDA">
+    <span class="hint">Live search runs on the interactive app</span>
+    {% else %}
+    <input id="search" type="text" list="symlist" spellcheck="false" autocomplete="off"
+           placeholder="Search any stock — ticker or company name, e.g. PLTR or Palantir">
+    <button id="addBtn" type="button">Add to scan</button>
+    <span class="hint">Enter adds it to the watchlist and rescans</span>
+    <datalist id="symlist"></datalist>
+    {% endif %}
+  </div>
 
   <div class="legend">
     <span><svg class="icon sm GREEN"><use href="#i-ok"/></svg> <b>Room to move</b> — ≤ 70% of ATR used</span>
@@ -324,8 +355,12 @@ const STATUS_ICON = { GREEN: "i-ok", ORANGE: "i-warn", RED: "i-stop", NA: "i-na"
 let lastRows = [];
 let sortKey = null, sortDir = 1;
 let selectedSymbol = null;
+let filterText = "";
+let directory = [];   // [{symbol, name}] for search suggestions (live mode)
 
 const $ = (id) => document.getElementById(id);
+let baseStatus = "";
+const setStatus = (t) => { baseStatus = t; $("status").textContent = t; };
 const fmt = (v, d = 2) => (v === null || v === undefined || Number.isNaN(v)) ? "—" : Number(v).toFixed(d);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g,
   (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -343,17 +378,17 @@ function params() {
 async function runScan() {
   if (STATIC) {
     lastRows = STATIC.rows;
-    render();
     const ok = lastRows.filter(r => r.ok);
-    $("status").textContent =
+    setStatus(
       `Snapshot of ${lastRows.length} symbol${lastRows.length === 1 ? "" : "s"}` +
       (ok.length ? ` · data date ${ok[0].date}` : "") +
-      ` · generated ${STATIC.generated_at}`;
+      ` · generated ${STATIC.generated_at}`);
+    render();
     return;
   }
   const btn = $("scanBtn");
   btn.disabled = true;
-  $("status").textContent = "Scanning…";
+  setStatus("Scanning…");
   try {
     const p = params();
     const qs = new URLSearchParams({ tickers: p.tickers, atr_length: p.atr_length, source: p.source });
@@ -361,15 +396,15 @@ async function runScan() {
     if (!resp.ok) throw new Error("HTTP " + resp.status);
     const data = await resp.json();
     lastRows = data.rows;
-    render();
     const ok = lastRows.filter(r => r.ok).length;
     const failed = lastRows.length - ok;
-    $("status").textContent =
+    setStatus(
       `Scanned ${lastRows.length} symbol${lastRows.length === 1 ? "" : "s"}` +
       (failed ? ` — ${failed} failed (see table)` : "") +
-      (lastRows.find(r => r.ok) ? ` · data date ${lastRows.find(r => r.ok).date}` : "");
+      (lastRows.find(r => r.ok) ? ` · data date ${lastRows.find(r => r.ok).date}` : ""));
+    render();
   } catch (err) {
-    $("status").textContent = "Scan failed: " + err.message;
+    setStatus("Scan failed: " + err.message);
   } finally {
     btn.disabled = false;
   }
@@ -389,10 +424,19 @@ function sortedRows() {
   return rows;
 }
 
+function matchesFilter(r) {
+  const q = filterText.trim().toUpperCase();
+  if (!q) return true;
+  if (r.symbol.includes(q)) return true;
+  const entry = directory.find(d => d.symbol === r.symbol);
+  return !!(entry && entry.name.toUpperCase().includes(q));
+}
+
 function render() {
+  const visible = lastRows.filter(matchesFilter);
   const chips = $("chips");
   chips.innerHTML = "";
-  for (const r of lastRows) {
+  for (const r of visible) {
     const div = document.createElement("div");
     if (r.ok) {
       div.className = "chip " + esc(r.status);
@@ -413,7 +457,7 @@ function render() {
 
   const tbody = $("tbody");
   tbody.innerHTML = "";
-  for (const r of sortedRows()) {
+  for (const r of sortedRows().filter(matchesFilter)) {
     const tr = document.createElement("tr");
     if (!r.ok) {
       tr.className = "err-row";
@@ -440,6 +484,62 @@ function render() {
     tbody.appendChild(tr);
   }
   $("results").style.display = lastRows.length ? "" : "none";
+  const q = filterText.trim();
+  if (q && lastRows.length) {
+    $("status").textContent = visible.length
+      ? `Showing ${visible.length} of ${lastRows.length} symbols matching “${q}”`
+      : (STATIC
+          ? `No symbol in this snapshot matches “${q}”.`
+          : `No scanned symbol matches “${q}” — press Enter or “Add to scan” to fetch it live.`);
+  } else {
+    $("status").textContent = baseStatus;
+  }
+}
+
+// ---- live search -----------------------------------------------------------
+
+async function loadDirectory() {
+  try {
+    const resp = await fetch("api/symbols");
+    if (!resp.ok) return;
+    directory = await resp.json();
+    const dl = $("symlist");
+    if (!dl) return;
+    for (const d of directory) {
+      const opt = document.createElement("option");
+      opt.value = d.symbol;
+      opt.label = d.name;
+      dl.appendChild(opt);
+    }
+  } catch (e) { /* suggestions are optional */ }
+}
+
+function resolveSymbol(raw) {
+  const q = raw.trim();
+  if (!q) return "";
+  const upper = q.toUpperCase();
+  if (directory.some(d => d.symbol === upper)) return upper;
+  // Try a company-name match ("palantir" -> PLTR)
+  const byName = directory.find(d => d.name.toUpperCase().includes(upper));
+  if (byName && !/^[A-Z0-9.^=-]{1,6}$/.test(upper)) return byName.symbol;
+  // Otherwise treat the input as a raw ticker
+  return upper.replace(/[^A-Z0-9.^=-]/g, "");
+}
+
+function addSymbol() {
+  const sym = resolveSymbol($("search").value);
+  if (!sym) return;
+  const input = $("tickers");
+  const current = input.value.split(",").map(s => s.trim().toUpperCase()).filter(Boolean);
+  if (!current.includes(sym)) current.push(sym);
+  input.value = current.join(",");
+  $("search").value = "";
+  filterText = "";
+  selectedSymbol = sym;
+  runScan().then(() => {
+    const row = lastRows.find(r => r.symbol === sym && r.ok);
+    if (row) showChart(sym);
+  });
 }
 
 function applyChart(data) {
@@ -577,9 +677,15 @@ document.querySelectorAll("thead th").forEach((th) => {
     render();
   };
 });
+$("search").addEventListener("input", () => { filterText = $("search").value; render(); });
 if (!STATIC) {
   $("scanBtn").onclick = runScan;
   $("tickers").addEventListener("keydown", (e) => { if (e.key === "Enter" && !$("scanBtn").disabled) runScan(); });
+  $("addBtn").onclick = addSymbol;
+  $("search").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !$("scanBtn").disabled) { e.preventDefault(); addSymbol(); }
+  });
+  loadDirectory();
 }
 runScan();
 </script>

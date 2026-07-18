@@ -18,13 +18,28 @@ from __future__ import annotations
 import hashlib
 import io
 import logging
+import os
 import re
+import threading
+import time
 from datetime import date, timedelta
 
 import numpy as np
 import pandas as pd
 
 log = logging.getLogger(__name__)
+
+# In-process TTL cache for LIVE fetches, so a hosted dashboard doesn't hit
+# the providers again for every visitor. Offline data is never cached
+# (it's cheap and deterministic). Set DATA_CACHE_TTL=0 to disable.
+CACHE_TTL_SECONDS = int(os.environ.get("DATA_CACHE_TTL", "300"))
+_cache: dict[tuple, tuple[float, pd.DataFrame]] = {}
+_cache_lock = threading.Lock()
+
+
+def clear_cache() -> None:
+    with _cache_lock:
+        _cache.clear()
 
 # Real-world tickers: letters/digits plus Yahoo's ^ (indices), = (futures/FX),
 # and . / - class suffixes. Also keeps garbage out of provider URLs and HTML.
@@ -200,22 +215,39 @@ def fetch_daily(
 
     if source == "offline":
         return sample_daily(symbol, lookback_days)
-    if source == "yfinance":
-        return fetch_yfinance(symbol, lookback_days)
-    if source == "stooq":
-        return fetch_stooq(symbol, lookback_days)
-    if source != "auto":
+    if source not in ("auto", "yfinance", "stooq"):
         raise ValueError(f"unknown source {source!r} "
                          "(expected auto, yfinance, stooq, or offline)")
 
-    errors = []
-    for name, provider in (("yfinance", fetch_yfinance), ("stooq", fetch_stooq)):
-        try:
-            return provider(symbol, lookback_days)
-        except Exception as exc:  # network/provider failures -> try next
-            log.warning("%s: %s failed: %s", symbol, name, exc)
-            errors.append(f"{name}: {exc}")
-    raise LookupError(
-        f"{symbol}: all live data sources failed ({'; '.join(errors)}). "
-        "If you are offline, rerun with source='offline' (CLI: --source offline)."
-    )
+    key = (symbol, lookback_days, source)
+    if CACHE_TTL_SECONDS > 0:
+        with _cache_lock:
+            hit = _cache.get(key)
+        if hit is not None and (time.monotonic() - hit[0]) < CACHE_TTL_SECONDS:
+            return hit[1].copy()
+
+    df = None
+    if source == "yfinance":
+        df = fetch_yfinance(symbol, lookback_days)
+    elif source == "stooq":
+        df = fetch_stooq(symbol, lookback_days)
+    else:  # auto: yfinance, then stooq
+        errors = []
+        for name, provider in (("yfinance", fetch_yfinance), ("stooq", fetch_stooq)):
+            try:
+                df = provider(symbol, lookback_days)
+                break
+            except Exception as exc:  # network/provider failures -> try next
+                log.warning("%s: %s failed: %s", symbol, name, exc)
+                errors.append(f"{name}: {exc}")
+        if df is None:
+            raise LookupError(
+                f"{symbol}: all live data sources failed ({'; '.join(errors)}). "
+                "If you are offline, rerun with source='offline' "
+                "(CLI: --source offline)."
+            )
+
+    if CACHE_TTL_SECONDS > 0:
+        with _cache_lock:
+            _cache[key] = (time.monotonic(), df)
+    return df.copy()

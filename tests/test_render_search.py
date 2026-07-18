@@ -1,0 +1,151 @@
+"""Tests for the Render deployment surface and live-search support:
+env-var app config, /api/symbols, /healthz, the data TTL cache, and the
+search UI markup in both template modes."""
+
+import json
+from pathlib import Path
+
+import pandas as pd
+import pytest
+
+import jadentradebot.data as data_mod
+from jadentradebot.data import fetch_daily, sample_daily
+from jadentradebot.web.app import create_app
+
+REPO = Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture(autouse=True)
+def clean_cache():
+    data_mod.clear_cache()
+    yield
+    data_mod.clear_cache()
+
+
+class TestSymbolsDirectory:
+    def test_file_is_valid_and_well_formed(self):
+        entries = json.loads(
+            (REPO / "jadentradebot" / "web" / "symbols.json").read_text()
+        )
+        assert len(entries) > 150
+        seen = set()
+        for e in entries:
+            assert set(e) == {"symbol", "name"}
+            assert e["symbol"] == e["symbol"].upper()
+            assert e["symbol"] not in seen, f"duplicate {e['symbol']}"
+            seen.add(e["symbol"])
+            assert len(e["name"]) > 1
+
+    def test_api_symbols_endpoint(self):
+        app = create_app(watchlist=["AAPL"], source="offline")
+        client = app.test_client()
+        resp = client.get("/api/symbols")
+        assert resp.status_code == 200
+        entries = resp.get_json()
+        assert any(e["symbol"] == "PLTR" for e in entries)
+
+    def test_healthz(self):
+        app = create_app(watchlist=["AAPL"], source="offline")
+        resp = app.test_client().get("/healthz")
+        assert resp.status_code == 200
+        assert resp.get_json()["status"] == "ok"
+
+
+class TestEnvConfig:
+    def test_env_vars_configure_the_app(self, monkeypatch):
+        monkeypatch.setenv("WATCHLIST", "pltr, coin ,")
+        monkeypatch.setenv("DATA_SOURCE", "offline")
+        monkeypatch.setenv("ATR_LENGTH", "21")
+        monkeypatch.setenv("LOOKBACK_DAYS", "90")
+        app = create_app()
+        assert app.config["WATCHLIST"] == ["PLTR", "COIN"]
+        assert app.config["SOURCE"] == "offline"
+        assert app.config["ATR_LENGTH"] == 21
+        assert app.config["LOOKBACK_DAYS"] == 90
+
+    def test_bad_env_values_fall_back(self, monkeypatch):
+        monkeypatch.setenv("DATA_SOURCE", "bloomberg")
+        monkeypatch.setenv("ATR_LENGTH", "not-a-number")
+        app = create_app()
+        assert app.config["SOURCE"] == "auto"
+        assert app.config["ATR_LENGTH"] == 14
+
+    def test_explicit_args_beat_env(self, monkeypatch):
+        monkeypatch.setenv("WATCHLIST", "PLTR")
+        monkeypatch.setenv("DATA_SOURCE", "offline")
+        app = create_app(watchlist=["NVDA"], source="stooq")
+        assert app.config["WATCHLIST"] == ["NVDA"]
+        assert app.config["SOURCE"] == "stooq"
+
+
+class TestDataCache:
+    def test_live_fetch_is_cached_within_ttl(self, monkeypatch):
+        calls = []
+
+        def fake_yf(symbol, lookback_days):
+            calls.append(symbol)
+            return sample_daily(symbol, lookback_days)
+
+        monkeypatch.setattr(data_mod, "fetch_yfinance", fake_yf)
+        monkeypatch.setattr(data_mod, "CACHE_TTL_SECONDS", 300)
+        a = fetch_daily("CACHETEST", source="yfinance")
+        b = fetch_daily("CACHETEST", source="yfinance")
+        assert calls == ["CACHETEST"]          # second hit served from cache
+        pd.testing.assert_frame_equal(a, b)
+        # Returned frames are copies — mutating one must not poison the cache.
+        a.iloc[0, 0] = -1
+        c = fetch_daily("CACHETEST", source="yfinance")
+        assert c.iloc[0, 0] != -1
+
+    def test_ttl_zero_disables_cache(self, monkeypatch):
+        calls = []
+
+        def fake_yf(symbol, lookback_days):
+            calls.append(symbol)
+            return sample_daily(symbol, lookback_days)
+
+        monkeypatch.setattr(data_mod, "fetch_yfinance", fake_yf)
+        monkeypatch.setattr(data_mod, "CACHE_TTL_SECONDS", 0)
+        fetch_daily("NOCACHE", source="yfinance")
+        fetch_daily("NOCACHE", source="yfinance")
+        assert calls == ["NOCACHE", "NOCACHE"]
+
+    def test_offline_is_never_cached(self, monkeypatch):
+        monkeypatch.setattr(data_mod, "CACHE_TTL_SECONDS", 300)
+        fetch_daily("AAPL", source="offline")
+        assert not data_mod._cache
+
+
+class TestSearchUi:
+    def test_dynamic_page_has_search_and_add(self):
+        app = create_app(watchlist=["AAPL"], source="offline")
+        html = app.test_client().get("/").get_data(as_text=True)
+        assert 'id="search"' in html
+        assert 'id="addBtn"' in html
+        assert 'id="symlist"' in html   # datalist for autocomplete
+
+    def test_static_page_has_filter_but_no_add(self, tmp_path):
+        from jadentradebot.sitegen import build_site
+
+        build_site(tmp_path / "s", symbols=["AAPL"], source="offline")
+        html = (tmp_path / "s" / "index.html").read_text()
+        assert 'id="search"' in html
+        assert 'id="addBtn"' not in html
+        assert 'id="scanBtn"' not in html
+
+
+class TestRenderBlueprint:
+    def test_render_yaml_is_valid_and_complete(self):
+        import yaml
+
+        cfg = yaml.safe_load((REPO / "render.yaml").read_text())
+        svc = cfg["services"][0]
+        assert svc["type"] == "web"
+        assert "gunicorn" in svc["startCommand"]
+        assert "jadentradebot.web.app:app" in svc["startCommand"]
+        assert svc["healthCheckPath"] == "/healthz"
+        env_keys = {e["key"] for e in svc["envVars"]}
+        assert {"WATCHLIST", "DATA_SOURCE", "ATR_LENGTH"} <= env_keys
+
+    def test_gunicorn_in_requirements(self):
+        assert "gunicorn" in (REPO / "requirements.txt").read_text()

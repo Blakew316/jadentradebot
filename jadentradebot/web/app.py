@@ -5,13 +5,22 @@ Endpoints:
 - ``GET /``                     — dashboard UI (self-contained, no CDNs)
 - ``GET /api/scan``             — scan a comma-separated watchlist
 - ``GET /api/chart/<symbol>``   — daily bars + indicator series for the chart
+- ``GET /api/symbols``          — bundled symbol directory (search suggestions)
+- ``GET /healthz``              — liveness probe for hosting platforms
 
-Launch via ``python -m jadentradebot web`` (see ``--help`` for options).
+Launch locally via ``python -m jadentradebot web`` (see ``--help``), or in
+production behind gunicorn: ``gunicorn 'jadentradebot.web.app:app'``. The
+module-level ``app`` reads configuration from environment variables —
+``WATCHLIST`` (comma-separated), ``DATA_SOURCE``, ``ATR_LENGTH``,
+``LOOKBACK_DAYS`` — which is how the Render deployment is configured.
 """
 
 from __future__ import annotations
 
+import json
 import math
+import os
+from pathlib import Path
 
 import pandas as pd
 from flask import Flask, jsonify, render_template, request
@@ -23,6 +32,21 @@ from jadentradebot.scanner import DEFAULT_WATCHLIST, ScanRow, scan, scan_symbol
 
 MAX_TICKERS = 50
 CHART_BARS = 60
+
+_SYMBOLS_FILE = Path(__file__).with_name("symbols.json")
+
+
+def _env_int(name: str, fallback: int) -> int:
+    try:
+        return int(os.environ[name])
+    except (KeyError, ValueError):
+        return fallback
+
+
+def _env_watchlist() -> list[str] | None:
+    raw = os.environ.get("WATCHLIST", "")
+    symbols = [s.strip().upper() for s in raw.split(",") if s.strip()]
+    return symbols or None
 
 
 def _clean(value: float) -> float | None:
@@ -81,17 +105,23 @@ def chart_payload(row: ScanRow) -> dict:
 
 def create_app(
     watchlist: list[str] | None = None,
-    source: str = "auto",
-    atr_length: int = DEFAULT_ATR_LENGTH,
-    lookback_days: int = DEFAULT_LOOKBACK_DAYS,
+    source: str | None = None,
+    atr_length: int | None = None,
+    lookback_days: int | None = None,
 ) -> Flask:
+    """App factory. Explicit arguments win; otherwise environment variables
+    (WATCHLIST, DATA_SOURCE, ATR_LENGTH, LOOKBACK_DAYS) then defaults."""
     app = Flask(__name__)
-    app.config["WATCHLIST"] = [
-        s.strip().upper() for s in (watchlist or DEFAULT_WATCHLIST) if s.strip()
-    ]
+    watchlist = watchlist or _env_watchlist() or DEFAULT_WATCHLIST
+    app.config["WATCHLIST"] = [s.strip().upper() for s in watchlist if s.strip()]
+    source = source or os.environ.get("DATA_SOURCE") or "auto"
+    if source not in ("auto", "yfinance", "stooq", "offline"):
+        source = "auto"
     app.config["SOURCE"] = source
-    app.config["ATR_LENGTH"] = atr_length
-    app.config["LOOKBACK_DAYS"] = lookback_days
+    app.config["ATR_LENGTH"] = atr_length or _env_int("ATR_LENGTH", DEFAULT_ATR_LENGTH)
+    app.config["LOOKBACK_DAYS"] = lookback_days or _env_int(
+        "LOOKBACK_DAYS", DEFAULT_LOOKBACK_DAYS
+    )
 
     def _request_params():
         source_ = request.args.get("source", app.config["SOURCE"])
@@ -133,6 +163,14 @@ def create_app(
                 "rows": [_row_payload(r) for r in rows],
             }
         )
+
+    @app.get("/api/symbols")
+    def api_symbols():
+        return jsonify(json.loads(_SYMBOLS_FILE.read_text(encoding="utf-8")))
+
+    @app.get("/healthz")
+    def healthz():
+        return {"status": "ok", "version": __version__}
 
     @app.get("/api/chart/<symbol>")
     def api_chart(symbol: str):
