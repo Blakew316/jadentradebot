@@ -82,13 +82,6 @@
     will-change: transform;
     transform: translate3d(0, 0, 0) scale(1.02);
   }
-  .bg-veil { position: absolute; inset: 0; pointer-events: none;
-    background: radial-gradient(120% 90% at 50% 10%, rgba(6,12,26,0) 40%, rgba(6,12,26,.38) 100%);
-    transition: background .25s ease, opacity .25s ease;
-  }
-  :root[data-theme="dark"] .bg-veil {
-    background: radial-gradient(120% 90% at 50% 10%, rgba(4,8,18,.25) 30%, rgba(4,8,18,.62) 100%);
-  }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
   body {
@@ -252,7 +245,6 @@
 
 <div class="bg" aria-hidden="true">
   <div class="bg-img" id="bgImg"></div>
-  <div class="bg-veil"></div>
 </div>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
