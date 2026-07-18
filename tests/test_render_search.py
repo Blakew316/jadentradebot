@@ -145,15 +145,17 @@ class TestCalculator:
         html = app.test_client().get("/").get_data(as_text=True)
         assert "SAR Risk Management Calculator" in html
         for el in ("cAccount", "cRisk", "cEntry", "cStop", "cOption",
-                   "cSymbol", "rShares", "rOptions"):
+                   "rShares", "rOptions"):
             assert f'id="{el}"' in html
+        assert 'id="cSymbol"' not in html   # prefill removed on request
         # Elements of the original: risk options, labels, sheet link
-        for text in ("0.5%", "Account Size $", "Entry Price", "Stop Loss Price",
-                     "Option Value", "Shares to Buy", "Options to Buy",
-                     "Risking 1%", "Reference to Spreadsheet",
-                     "SAR RISK MANAGEMENT SHEET",
-                     "sheet.zohopublic.com/sheet/published/"):
+        for text in ("0.25%", "0.5%", "Account Size $", "Entry Price",
+                     "Stop Loss Price", "Option Value", "Shares to Buy",
+                     "Options to Buy", "Risking 1%"):
             assert text in html, text
+        # The spreadsheet link was removed on request.
+        assert "sheet.zohopublic.com" not in html
+        assert "SAR RISK MANAGEMENT SHEET" not in html
 
     def test_static_page_has_sar_calculator(self, tmp_path):
         from jadentradebot.sitegen import build_site
@@ -161,7 +163,7 @@ class TestCalculator:
         build_site(tmp_path / "s", symbols=["AAPL"], source="offline")
         html = (tmp_path / "s" / "index.html").read_text()
         assert "SAR Risk Management Calculator" in html
-        assert 'id="cSymbol"' in html
+        assert 'id="cRisk"' in html
 
 
 class TestRenderBlueprint:

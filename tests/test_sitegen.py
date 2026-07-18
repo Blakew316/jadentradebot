@@ -12,19 +12,16 @@ class TestSitegen:
         data = build_site(out, symbols=["AAPL", "TSLA"], source="offline")
 
         html = (out / "index.html").read_text(encoding="utf-8")
-        assert "STATIC_DATA" in html         # embedded rows feed the prefill
         assert "SAR Risk Management Calculator" in html
-        assert "AAPL" in html
         assert (out / ".nojekyll").exists()
 
         scan_json = json.loads((out / "data" / "scan.json").read_text())
         assert {r["symbol"] for r in scan_json["rows"]} == {"AAPL", "TSLA"}
         assert scan_json["params"]["source"] == "offline"
-        assert "charts" not in scan_json  # charts live only in the page
 
-        assert set(data["charts"]) == {"AAPL", "TSLA"}
-        for chart in data["charts"].values():
-            assert chart["bars"], "expected embedded chart bars"
+        # The calculator page embeds only the scan rows — no chart payloads.
+        assert "charts" not in data
+        assert len(html) < 100_000, "snapshot should stay lightweight"
 
     def test_cli_sitegen(self, tmp_path, capsys):
         out = tmp_path / "public"

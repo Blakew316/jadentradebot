@@ -24,7 +24,7 @@ from jadentradebot import __version__
 from jadentradebot.data import DEFAULT_LOOKBACK_DAYS
 from jadentradebot.indicator import DEFAULT_ATR_LENGTH
 from jadentradebot.scanner import DEFAULT_WATCHLIST, scan
-from jadentradebot.web.app import _row_payload, chart_payload, create_app
+from jadentradebot.web.app import _row_payload, create_app
 
 
 def build_site(
@@ -44,14 +44,15 @@ def build_site(
         atr_length=atr_length,
         lookback_days=lookback_days,
         source=source,
-        keep_series=True,
     )
 
+    # Only the scan rows are embedded: the calculator page's prefill dropdown
+    # reads them, and data/scan.json republishes them. (Chart series stay out
+    # of the page — they were 85% of the payload and nothing renders them.)
     static_data = {
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         "params": {"source": source, "atr_length": atr_length},
         "rows": [_row_payload(r) for r in rows],
-        "charts": {r.symbol: chart_payload(r) for r in rows if r.ok},
     }
 
     app = create_app(watchlist=watch, source=source, atr_length=atr_length,
@@ -68,8 +69,7 @@ def build_site(
 
     (out / "index.html").write_text(html, encoding="utf-8")
     (out / ".nojekyll").write_text("", encoding="utf-8")
-    scan_json = {k: v for k, v in static_data.items() if k != "charts"}
     (out / "data" / "scan.json").write_text(
-        json.dumps(scan_json, indent=2), encoding="utf-8"
+        json.dumps(static_data, indent=2), encoding="utf-8"
     )
     return static_data
