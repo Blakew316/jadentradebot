@@ -74,10 +74,44 @@
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
     color-scheme: dark;
   }
+  /* ---------- animated reflective background ---------- */
+  .bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: #0b1a36; }
+  .bg-img {
+    position: absolute; inset: -7%;
+    background: url("bg.svg") center / cover no-repeat;
+    will-change: transform;
+    transform: translate3d(0, 0, 0) scale(1.02);
+  }
+  .bg-veil { position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(120% 90% at 50% 10%, rgba(6,12,26,0) 40%, rgba(6,12,26,.38) 100%);
+    transition: background .25s ease, opacity .25s ease;
+  }
+  :root[data-theme="dark"] .bg-veil {
+    background: radial-gradient(120% 90% at 50% 10%, rgba(4,8,18,.25) 30%, rgba(4,8,18,.62) 100%);
+  }
+  .bg-sheen {
+    position: absolute; inset: -12%;
+    background: linear-gradient(115deg,
+      transparent 38%, rgba(255,255,255,.10) 47%,
+      rgba(255,255,255,.16) 50%, rgba(255,255,255,.10) 53%, transparent 62%);
+    background-size: 240% 240%;
+    animation: sheen 11s ease-in-out infinite;
+    mix-blend-mode: screen; will-change: transform, background-position;
+    pointer-events: none;
+  }
+  @keyframes sheen {
+    0%   { background-position: 120% 0%; }
+    55%  { background-position: -20% 100%; }
+    100% { background-position: 120% 0%; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bg-sheen { animation: none; }
+  }
+
   * { box-sizing: border-box; }
   html, body { margin: 0; }
   body {
-    background: var(--bg);
+    background: transparent;   /* the fixed .bg layer paints the canvas */
     color: var(--text);
     font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
           "Inter", Roboto, Helvetica, Arial, sans-serif;
@@ -87,7 +121,7 @@
     min-height: 100dvh;
     display: flex; flex-direction: column;
     -webkit-tap-highlight-color: transparent;
-    transition: background .25s ease, color .25s ease;
+    transition: color .25s ease;
   }
   button, select, input { touch-action: manipulation; }
 
@@ -122,7 +156,9 @@
   main { width: 100%; max-width: 880px; margin: 0 auto; padding: 40px 24px 56px; flex: 1; }
 
   .card {
-    background: var(--card);
+    background: color-mix(in srgb, var(--card) 90%, transparent);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
     border: 1px solid var(--hairline);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
@@ -232,6 +268,12 @@
 </style>
 </head>
 <body>
+
+<div class="bg" aria-hidden="true">
+  <div class="bg-img" id="bgImg"></div>
+  <div class="bg-sheen" id="bgSheen"></div>
+  <div class="bg-veil"></div>
+</div>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
@@ -390,6 +432,60 @@ $("themeBtn").addEventListener("click", () =>
   applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
 
 sarRecalc();
+
+// ---- reflective background: parallax that reacts to device movement -------
+// Mouse movement on desktop; gyroscope tilt on phones/tablets. The image and
+// the light sheen move in opposite directions, which reads as a reflection.
+(function () {
+  const img = $("bgImg"), sheen = $("bgSheen");
+  if (!img || !sheen) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  let tx = 0, ty = 0;      // target offset (px)
+  let cx = 0, cy = 0;      // current offset (lerped)
+  const MAX = 18;
+
+  function frame() {
+    cx += (tx - cx) * 0.08;
+    cy += (ty - cy) * 0.08;
+    img.style.transform = `translate3d(${cx}px, ${cy}px, 0) scale(1.06)`;
+    sheen.style.transform = `translate3d(${-cx * 1.8}px, ${-cy * 1.8}px, 0)`;
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  window.addEventListener("mousemove", (e) => {
+    tx = (e.clientX / window.innerWidth - 0.5) * -2 * MAX;
+    ty = (e.clientY / window.innerHeight - 0.5) * -2 * MAX;
+  }, { passive: true });
+
+  function onTilt(e) {
+    if (e.gamma === null || e.beta === null) return;
+    const g = Math.max(-30, Math.min(30, e.gamma));        // left/right tilt
+    const b = Math.max(-30, Math.min(30, e.beta - 40));    // forward/back, offset for hand-held angle
+    tx = (g / 30) * -MAX;
+    ty = (b / 30) * -MAX;
+  }
+
+  if (typeof DeviceOrientationEvent !== "undefined") {
+    if (typeof DeviceOrientationEvent.requestPermission === "function") {
+      // iOS 13+: motion access needs a user gesture; ask once on first touch.
+      const ask = () => {
+        DeviceOrientationEvent.requestPermission()
+          .then((state) => {
+            if (state === "granted") window.addEventListener("deviceorientation", onTilt, { passive: true });
+          })
+          .catch(() => {});
+        window.removeEventListener("touchend", ask);
+        window.removeEventListener("click", ask);
+      };
+      window.addEventListener("touchend", ask, { once: true });
+      window.addEventListener("click", ask, { once: true });
+    } else {
+      window.addEventListener("deviceorientation", onTilt, { passive: true });
+    }
+  }
+})();
 
 // ---- PWA: register the service worker (relative path keeps the scope
 // correct at the domain root and under a GitHub Pages project path) -----

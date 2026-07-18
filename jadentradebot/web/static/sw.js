@@ -3,10 +3,11 @@
    offline once installed. Bump CACHE on breaking asset changes. */
 "use strict";
 
-const CACHE = "jrc-v2";
+const CACHE = "jrc-v3";
 const SHELL = [
   "./",
   "manifest.webmanifest",
+  "bg.svg",
   "icons/icon-180.png",
   "icons/icon-192.png",
   "icons/icon-512.png",

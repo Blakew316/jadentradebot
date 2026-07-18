@@ -45,6 +45,12 @@ class TestPwaEndpoints:
             assert resp.status_code == 200, path
             assert resp.data.startswith(PNG_MAGIC), path
 
+    def test_background_asset(self):
+        resp = client().get("/bg.svg")
+        assert resp.status_code == 200
+        assert resp.mimetype == "image/svg+xml"
+        assert b"<svg" in resp.data
+
     def test_template_wiring(self):
         html = client().get("/").get_data(as_text=True)
         assert 'rel="manifest"' in html
@@ -59,6 +65,7 @@ class TestPwaStaticBuild:
         build_site(out, symbols=["AAPL"], source="offline")
         assert (out / "manifest.webmanifest").exists()
         assert (out / "sw.js").exists()
+        assert (out / "bg.svg").exists()
         assert (out / "apple-touch-icon.png").read_bytes().startswith(PNG_MAGIC)
         for name in ("icon-180.png", "icon-192.png", "icon-512.png",
                      "icon-512-maskable.png"):
