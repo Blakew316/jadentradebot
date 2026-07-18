@@ -3,188 +3,243 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>jadentradebot — DTR vs ATR Stock Identifier</title>
+<title>JadenTradeBot — DTR vs ATR Stock Identifier</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2316345c'/%3E%3Crect x='7' y='13' width='3.6' height='9' rx='1' fill='%23ffffff' opacity='.85'/%3E%3Crect x='8.5' y='10.5' width='.9' height='14' fill='%23ffffff' opacity='.55'/%3E%3Crect x='14.2' y='8' width='3.6' height='12' rx='1' fill='%23ffffff'/%3E%3Crect x='15.7' y='5.5' width='.9' height='17' fill='%23ffffff' opacity='.55'/%3E%3Crect x='21.4' y='11' width='3.6' height='10' rx='1' fill='%23ffffff' opacity='.85'/%3E%3Crect x='22.9' y='8.5' width='.9' height='15' fill='%23ffffff' opacity='.55'/%3E%3C/svg%3E">
 <style>
   :root {
-    --bg: #f5f5f7;
+    --bg: #f6f8fa;
     --card: #ffffff;
-    --text: #1d1d1f;
-    --muted: #6e6e73;
-    --faint: #86868b;
-    --hairline: #d2d2d7;
-    --hairline-soft: #e8e8ed;
-    --accent: #0071e3;
-    --accent-hover: #0077ed;
-    --green: #34c759;
-    --orange: #ff9500;
-    --red: #ff3b30;
-    --green-text: #1d7d33;
-    --orange-text: #b25000;
-    --red-text: #d70015;
-    --na: #d2d2d7;
-    --radius: 18px;
+    --text: #0f172a;
+    --muted: #5b6472;
+    --faint: #8a93a2;
+    --line: #e2e8f0;
+    --line-soft: #edf1f6;
+    --brand: #16345c;
+    --brand-2: #1f4a85;
+    --accent: #1a56db;
+    --green: #15803d;
+    --amber: #b45309;
+    --red: #b91c1c;
+    --green-icon: #16a34a;
+    --amber-icon: #d97706;
+    --red-icon: #dc2626;
+    --na-icon: #cbd5e1;
+    --radius: 12px;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
   body {
     background: var(--bg);
     color: var(--text);
-    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter",
           Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
+
   header {
-    background: rgba(255,255,255,.85);
-    backdrop-filter: saturate(180%) blur(20px);
-    border-bottom: 1px solid var(--hairline-soft);
-    padding: 18px 28px;
-    display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline;
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    padding: 0 28px;
+    height: 60px;
+    display: flex; align-items: center; gap: 14px;
     position: sticky; top: 0; z-index: 5;
   }
-  header h1 { font-size: 19px; font-weight: 600; margin: 0; letter-spacing: -.2px; }
-  header .sub { color: var(--muted); font-size: 12.5px; font-weight: 400; }
-  main { max-width: 1180px; margin: 0 auto; padding: 26px 22px 60px; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand .mark { width: 28px; height: 28px; flex: none; }
+  .brand .name { font-size: 15.5px; font-weight: 700; letter-spacing: -.2px; }
+  .brand .name span { color: var(--brand-2); }
+  header .divider { width: 1px; height: 22px; background: var(--line); }
+  header .product { font-size: 13.5px; font-weight: 500; color: var(--muted); }
+  header .meta { margin-left: auto; color: var(--faint); font-size: 12px; }
+
+  main { max-width: 1180px; margin: 0 auto; padding: 26px 22px 56px; }
 
   .card {
     background: var(--card);
-    border: 1px solid var(--hairline-soft);
+    border: 1px solid var(--line);
     border-radius: var(--radius);
-    box-shadow: 0 1px 2px rgba(0,0,0,.03);
+    box-shadow: 0 1px 2px rgba(15,23,42,.04);
   }
+
+  .icon { width: 15px; height: 15px; flex: none; vertical-align: -3px; }
+  .icon.sm { width: 13px; height: 13px; vertical-align: -2px; }
+  .icon.GREEN { color: var(--green-icon); }
+  .icon.ORANGE { color: var(--amber-icon); }
+  .icon.RED { color: var(--red-icon); }
+  .icon.NA { color: var(--na-icon); }
 
   .controls {
     display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
     padding: 14px 16px; margin-bottom: 14px;
   }
-  .controls label { color: var(--muted); font-size: 12px; }
+  .controls label {
+    color: var(--faint); font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .6px;
+  }
   .controls input[type=text] {
     flex: 1 1 320px; min-width: 220px;
     background: var(--card); color: var(--text);
-    border: 1px solid var(--hairline); border-radius: 12px;
+    border: 1px solid var(--line); border-radius: 8px;
     padding: 9px 12px; font-size: 14px;
   }
   .controls input[type=number] {
     width: 68px; background: var(--card); color: var(--text);
-    border: 1px solid var(--hairline); border-radius: 12px; padding: 9px 10px;
+    border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px;
     font-size: 14px;
   }
   .controls select {
     background: var(--card); color: var(--text);
-    border: 1px solid var(--hairline); border-radius: 12px; padding: 9px 10px;
+    border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px;
     font-size: 14px;
   }
   .controls input:focus, .controls select:focus {
     outline: none; border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0,113,227,.15);
+    box-shadow: 0 0 0 3px rgba(26,86,219,.12);
   }
   .controls button {
-    background: var(--accent); border: 0; color: #fff; font-weight: 500;
-    border-radius: 980px; padding: 9px 22px; cursor: pointer; font-size: 14px;
-    transition: background .15s ease;
+    background: var(--brand); border: 0; color: #fff; font-weight: 600;
+    border-radius: 8px; padding: 10px 24px; cursor: pointer; font-size: 13.5px;
+    letter-spacing: .2px; transition: background .15s ease;
   }
-  .controls button:hover { background: var(--accent-hover); }
+  .controls button:hover { background: var(--brand-2); }
   .controls button:disabled { opacity: .5; cursor: wait; }
   .controls a { color: var(--accent); text-decoration: none; }
-  .snapshot-note { color: var(--muted); font-size: 12px; }
+  .snapshot-note { color: var(--faint); font-size: 12px; }
 
   .legend {
-    display: flex; gap: 18px; flex-wrap: wrap;
-    margin: 4px 4px 18px; color: var(--muted); font-size: 12.5px;
+    display: flex; gap: 22px; flex-wrap: wrap;
+    margin: 6px 4px 18px; color: var(--muted); font-size: 12.5px;
   }
-  .dot {
-    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
-    margin-right: 6px; vertical-align: 1px;
-  }
-  .dot.GREEN { background: var(--green); }
-  .dot.ORANGE { background: var(--orange); }
-  .dot.RED { background: var(--red); }
-  .dot.NA { background: var(--na); }
+  .legend b { color: var(--text); font-weight: 600; }
 
-  /* Label chips — quiet white pills, colour reduced to a dot and the pct */
   .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
   .chip {
-    background: var(--card); border: 1px solid var(--hairline-soft);
-    border-radius: 980px; padding: 8px 14px; cursor: pointer;
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 12px; cursor: pointer;
     font-size: 12.5px; color: var(--muted);
-    display: inline-flex; align-items: center; gap: 7px;
+    display: inline-flex; align-items: center; gap: 8px;
     transition: border-color .15s ease, box-shadow .15s ease;
   }
-  .chip:hover { border-color: var(--hairline); box-shadow: 0 1px 4px rgba(0,0,0,.06); }
-  .chip .sym { font-weight: 600; color: var(--text); }
-  .chip .pct { font-weight: 600; font-variant-numeric: tabular-nums; }
-  .chip.GREEN .pct { color: var(--green-text); }
-  .chip.ORANGE .pct { color: var(--orange-text); }
-  .chip.RED .pct { color: var(--red-text); }
+  .chip:hover { border-color: #c9d4e3; box-shadow: 0 2px 6px rgba(15,23,42,.07); }
+  .chip .sym { font-weight: 700; color: var(--text); letter-spacing: .2px; }
+  .chip .pct { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .chip.GREEN .pct { color: var(--green); }
+  .chip.ORANGE .pct { color: var(--amber); }
+  .chip.RED .pct { color: var(--red); }
   .chip.ERR { cursor: default; color: var(--faint); }
 
   .statusMsg { color: var(--muted); margin: 10px 4px 14px; font-size: 13px; }
 
   .tableWrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; min-width: 860px; }
+  table { width: 100%; border-collapse: collapse; min-width: 900px; }
   thead th {
-    text-align: right; font-size: 11px; font-weight: 500;
-    text-transform: uppercase; letter-spacing: .7px;
+    text-align: right; font-size: 10.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .8px;
     color: var(--faint); padding: 12px 14px;
-    border-bottom: 1px solid var(--hairline-soft);
+    border-bottom: 1px solid var(--line);
+    background: #fbfcfe;
     cursor: pointer; user-select: none; white-space: nowrap;
   }
   thead th:first-child, thead th:nth-child(2) { text-align: left; }
   tbody td {
     padding: 11px 14px; text-align: right;
-    border-bottom: 1px solid var(--hairline-soft);
+    border-bottom: 1px solid var(--line-soft);
     font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 13.5px;
   }
   tbody tr:last-child td { border-bottom: 0; }
   tbody td:first-child, tbody td:nth-child(2) { text-align: left; }
   tbody tr { cursor: pointer; transition: background .1s ease; }
-  tbody tr:hover { background: #fafafa; }
-  tbody tr.selected { background: #f0f6ff; }
-  .sym-cell { font-weight: 600; }
-  .status { font-weight: 500; }
-  .status.GREEN { color: var(--green-text); }
-  .status.ORANGE { color: var(--orange-text); }
-  .status.RED { color: var(--red-text); }
+  tbody tr:hover { background: #f8fafc; }
+  tbody tr.selected { background: #eef4ff; }
+  .sym-cell { font-weight: 700; letter-spacing: .2px; }
+  .status { font-weight: 600; display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; }
+  .status.GREEN { color: var(--green); }
+  .status.ORANGE { color: var(--amber); }
+  .status.RED { color: var(--red); }
   .err-row td { color: var(--faint); font-style: italic; }
 
   .meter {
     display: inline-block; width: 84px; height: 4px; border-radius: 4px;
-    background: var(--hairline-soft); vertical-align: 2px; margin-left: 10px;
+    background: var(--line-soft); vertical-align: 2px; margin-left: 10px;
     overflow: hidden;
   }
   .meter i { display: block; height: 100%; border-radius: 4px; }
 
   #chartPanel { margin-top: 18px; padding: 18px 20px 10px; display: none; }
-  #chartPanel h2 { margin: 0 0 4px; font-size: 16px; font-weight: 600; letter-spacing: -.2px; }
+  #chartPanel h2 {
+    margin: 0 0 4px; font-size: 15.5px; font-weight: 700; letter-spacing: -.2px;
+    display: flex; align-items: center; gap: 8px;
+  }
   .chartLabel {
-    display: inline-block; font-size: 12.5px; font-weight: 600;
-    border-radius: 980px; padding: 6px 12px; margin: 6px 0 10px;
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 12.5px; font-weight: 600;
+    border-radius: 8px; padding: 6px 12px; margin: 6px 0 10px;
     background: var(--bg); color: var(--muted);
     font-variant-numeric: tabular-nums;
+    border: 1px solid var(--line-soft);
   }
-  .chartLabel.GREEN { background: rgba(52,199,89,.12); color: var(--green-text); }
-  .chartLabel.ORANGE { background: rgba(255,149,0,.14); color: var(--orange-text); }
-  .chartLabel.RED { background: rgba(255,59,48,.12); color: var(--red-text); }
+  .chartLabel.GREEN { background: #f0faf3; color: var(--green); border-color: #d3ecd9; }
+  .chartLabel.ORANGE { background: #fdf6ec; color: var(--amber); border-color: #f3e3c8; }
+  .chartLabel.RED { background: #fdf1f0; color: var(--red); border-color: #f4d5d2; }
   #chartMeta { color: var(--muted); font-size: 12.5px; margin-bottom: 8px; }
   #chartMeta b { color: var(--text); font-weight: 600; }
-  svg text { fill: var(--faint); font-size: 10.5px;
-             font-family: "SF Mono", "Menlo", "Consolas", monospace; }
+  svg.plot text { fill: var(--faint); font-size: 10.5px;
+                  font-family: "SF Mono", "Menlo", "Consolas", monospace; }
 
   footer {
-    color: var(--faint); font-size: 11.5px; margin-top: 34px; text-align: center;
-    line-height: 1.7;
+    border-top: 1px solid var(--line);
+    color: var(--faint); font-size: 11.5px; margin-top: 36px;
+    padding-top: 18px; text-align: center; line-height: 1.8;
   }
   footer a { color: var(--accent); text-decoration: none; }
 
   @media (max-width: 640px) {
     main { padding: 16px 12px 40px; }
-    header { padding: 14px 16px; }
+    header { padding: 0 16px; }
+    header .product, header .meta { display: none; }
   }
 </style>
 </head>
 <body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-ok" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="8.5" fill="currentColor"/>
+      <path d="M6.4 10.3l2.3 2.3 4.6-4.9" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-warn" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="8.5" fill="currentColor"/>
+      <path d="M10 5.6v5.2" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
+      <circle cx="10" cy="13.9" r="1.15" fill="#fff"/>
+    </symbol>
+    <symbol id="i-stop" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="8.5" fill="currentColor"/>
+      <path d="M6.6 10h6.8" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
+    </symbol>
+    <symbol id="i-na" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="7.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.5 2.8"/>
+    </symbol>
+    <symbol id="i-mark" viewBox="0 0 32 32">
+      <rect width="32" height="32" rx="7" fill="#16345c"/>
+      <rect x="7" y="13" width="3.6" height="9" rx="1" fill="#fff" opacity=".85"/>
+      <rect x="8.5" y="10.5" width=".9" height="14" fill="#fff" opacity=".55"/>
+      <rect x="14.2" y="8" width="3.6" height="12" rx="1" fill="#fff"/>
+      <rect x="15.7" y="5.5" width=".9" height="17" fill="#fff" opacity=".55"/>
+      <rect x="21.4" y="11" width="3.6" height="10" rx="1" fill="#fff" opacity=".85"/>
+      <rect x="22.9" y="8.5" width=".9" height="15" fill="#fff" opacity=".55"/>
+    </symbol>
+  </defs>
+</svg>
+
 <header>
-  <h1>jadentradebot · DTR vs ATR Stock Identifier</h1>
-  <span class="sub">Port of the thinkorswim “Custom ATR Plot” by 7of9 (usethinkscript.com) · v{{ version }}</span>
+  <div class="brand">
+    <svg class="mark" aria-hidden="true"><use href="#i-mark"/></svg>
+    <span class="name">Jaden<span>TradeBot</span></span>
+  </div>
+  <span class="divider"></span>
+  <span class="product">DTR vs ATR Stock Identifier</span>
+  <span class="meta">Daily-range analytics · v{{ version }}</span>
 </header>
 
 <main>
@@ -208,18 +263,18 @@
       <option value="stooq"{% if source == 'stooq' %} selected{% endif %}>stooq</option>
       <option value="offline"{% if source == 'offline' %} selected{% endif %}>offline demo</option>
     </select>
-    <button id="scanBtn">Scan</button>
+    <button id="scanBtn">Run scan</button>
   </div>
   {% endif %}
 
   <div class="legend">
-    <span><i class="dot GREEN"></i><b>Green</b>&nbsp;≤ 70% of ATR used — room to move</span>
-    <span><i class="dot ORANGE"></i><b>Orange</b>&nbsp;70–90% — extended, caution</span>
-    <span><i class="dot RED"></i><b>Red</b>&nbsp;≥ 90% — average range exhausted</span>
+    <span><svg class="icon sm GREEN"><use href="#i-ok"/></svg> <b>Room to move</b> — ≤ 70% of ATR used</span>
+    <span><svg class="icon sm ORANGE"><use href="#i-warn"/></svg> <b>Extended</b> — 70–90% of ATR used</span>
+    <span><svg class="icon sm RED"><use href="#i-stop"/></svg> <b>Exhausted</b> — ≥ 90% of ATR used</span>
   </div>
 
   <div id="chips" class="chips"></div>
-  <div id="status" class="statusMsg">{% if not static_data %}Press <b>Scan</b> to run the identifier.{% endif %}</div>
+  <div id="status" class="statusMsg">{% if not static_data %}Press <b>Run scan</b> to evaluate the watchlist.{% endif %}</div>
 
   <div class="card tableWrap" id="results" style="display:none">
   <table>
@@ -251,10 +306,10 @@
 
   <footer>
     DTR = today’s high − low · ATR = Wilder’s average of daily True Range ·
-    DTR% = how much of the average daily range has been used today.<br>
+    DTR% = share of the average daily range already used today.<br>
     Indicator credit: “Custom ATR Plot” by 7of9, shared on
     <a href="https://usethinkscript.com/threads/dtr-vs-atr-indicator-for-thinkorswim.387/">usethinkscript.com</a>.
-    Not financial advice.
+    For research and education only — not investment advice.
   </footer>
 </main>
 
@@ -262,8 +317,10 @@
 <script>
 "use strict";
 const STATIC = window.STATIC_DATA || null;
-const COLORS = { GREEN: "#34c759", ORANGE: "#ff9500", RED: "#ff3b30", NA: "#d2d2d7" };
-const CANDLE_UP = "#34c759", CANDLE_DOWN = "#ff3b30";
+const COLORS = { GREEN: "#16a34a", ORANGE: "#d97706", RED: "#dc2626", NA: "#cbd5e1" };
+const CANDLE_UP = "#16a34a", CANDLE_DOWN = "#dc2626";
+const STATUS_LABEL = { GREEN: "Room to move", ORANGE: "Extended", RED: "Exhausted" };
+const STATUS_ICON = { GREEN: "i-ok", ORANGE: "i-warn", RED: "i-stop", NA: "i-na" };
 let lastRows = [];
 let sortKey = null, sortDir = 1;
 let selectedSymbol = null;
@@ -272,7 +329,8 @@ const $ = (id) => document.getElementById(id);
 const fmt = (v, d = 2) => (v === null || v === undefined || Number.isNaN(v)) ? "—" : Number(v).toFixed(d);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g,
   (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const title = (s) => s ? s[0] + s.slice(1).toLowerCase() : s;
+const iconFor = (status, extra = "") =>
+  `<svg class="icon ${extra} ${esc(status)}" aria-hidden="true"><use href="#${STATUS_ICON[status] || "i-na"}"/></svg>`;
 
 function params() {
   return {
@@ -339,7 +397,8 @@ function render() {
     if (r.ok) {
       div.className = "chip " + esc(r.status);
       div.innerHTML =
-        `<i class="dot ${esc(r.status)}"></i><span class="sym">${esc(r.symbol)}</span>` +
+        iconFor(r.status, "sm") +
+        `<span class="sym">${esc(r.symbol)}</span>` +
         `<span>DTR ${fmt(r.dtr)} vs ATR ${fmt(r.atr)}</span>` +
         `<span class="pct">${fmt(r.dtr_pct, 0)}%</span>`;
       div.title = r.label + " — " + r.meaning;
@@ -367,7 +426,7 @@ function render() {
     const meterW = Math.max(0, Math.min(100, r.dtr_pct));
     tr.innerHTML = `
       <td class="sym-cell">${esc(r.symbol)}</td>
-      <td><span class="status ${esc(r.status)}"><i class="dot ${esc(r.status)}"></i>${esc(title(r.status))}</span></td>
+      <td><span class="status ${esc(r.status)}">${iconFor(r.status, "sm")}${esc(STATUS_LABEL[r.status] || r.status)}</span></td>
       <td>${fmt(r.dtr_pct, 0)}%<span class="meter"><i style="width:${meterW}%;background:${meterColor}"></i></span></td>
       <td>${fmt(r.dtr)}</td>
       <td>${fmt(r.atr)}</td>
@@ -385,8 +444,8 @@ function render() {
 
 function applyChart(data) {
   const lbl = $("chartStudyLabel");
-  lbl.textContent = data.label;
   lbl.className = "chartLabel " + (data.status || "");
+  lbl.innerHTML = iconFor(data.status, "sm") + esc(data.label);
   $("chartMeta").innerHTML =
     `${esc(data.meaning)}. Range left today: <b>$${fmt(data.range_left)}</b> (${fmt(data.range_left_pct,0)}% of ATR) · ` +
     `ATR upside target from day low: <b>$${fmt(data.atr_buy_target)}</b> · ` +
@@ -404,8 +463,8 @@ async function showChart(symbol) {
   panel.style.display = "block";
   $("chartTitle").textContent = symbol + " — daily";
   const lbl = $("chartStudyLabel");
-  lbl.textContent = "loading…";
   lbl.className = "chartLabel";
+  lbl.textContent = "loading…";
   $("chart").innerHTML = "";
   $("chartMeta").textContent = "";
   if (STATIC) {
@@ -445,6 +504,7 @@ function drawChart(bars) {
   const svgNS = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(svgNS, "svg");
   svg.setAttribute("width", "100%");
+  svg.setAttribute("class", "plot");
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
 
   for (let i = 0; i <= 4; i++) {
@@ -453,7 +513,7 @@ function drawChart(bars) {
     const line = document.createElementNS(svgNS, "line");
     line.setAttribute("x1", padL); line.setAttribute("x2", W - padR);
     line.setAttribute("y1", gy); line.setAttribute("y2", gy);
-    line.setAttribute("stroke", "#f0f0f2"); line.setAttribute("stroke-width", "1");
+    line.setAttribute("stroke", "#eef1f6"); line.setAttribute("stroke-width", "1");
     svg.appendChild(line);
     const t = document.createElementNS(svgNS, "text");
     t.setAttribute("x", W - padR + 6); t.setAttribute("y", gy + 3.5);
